@@ -1,0 +1,30 @@
+{
+  "clusters": {
+    "AAVE": 2,
+    "ADA": 1,
+    "APT": 0,
+    "AVAX": 2,
+    "BNB": 1,
+    "BTC": 1,
+    "CRV": 2,
+    "ETH": 1,
+    "FET": 1,
+    "FIL": 2,
+    "GRT": 2,
+    "IMX": 0,
+    "INJ": 2,
+    "LDO": 0,
+    "LINK": 1,
+    "NEAR": 2,
+    "PENDLE": 3,
+    "PEPE": 3,
+    "RNDR": 0,
+    "SNX": 2,
+    "SOL": 1,
+    "SUI": 3,
+    "TAO": 0,
+    "TRX": 1,
+    "UNI": 2,
+    "WIF": 0
+  }
+}

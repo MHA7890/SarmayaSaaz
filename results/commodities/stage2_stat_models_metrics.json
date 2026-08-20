@@ -1,0 +1,110 @@
+{
+    "gold": {
+        "Test_Size": 647,
+        "Naive": {
+            "MAE": 34.7,
+            "RMSE": 56.4847,
+            "Dir_Acc": 3.71
+        },
+        "Prophet": {
+            "MAE": 1227.2303,
+            "RMSE": 1482.7127,
+            "Dir_Acc": 41.58
+        },
+        "ARIMA": {
+            "MAE": 34.7186,
+            "RMSE": 56.4191,
+            "Dir_Acc": 50.39
+        }
+    },
+    "silver": {
+        "Test_Size": 647,
+        "Naive": {
+            "MAE": 1.0318,
+            "RMSE": 2.2689,
+            "Dir_Acc": 3.71
+        },
+        "Prophet": {
+            "MAE": 20.3038,
+            "RMSE": 28.0707,
+            "Dir_Acc": 42.5
+        },
+        "ARIMA": {
+            "MAE": 1.0371,
+            "RMSE": 2.2617,
+            "Dir_Acc": 51.16
+        }
+    },
+    "copper": {
+        "Test_Size": 647,
+        "Naive": {
+            "MAE": 0.0627,
+            "RMSE": 0.1003,
+            "Dir_Acc": 4.02
+        },
+        "Prophet": {
+            "MAE": 1.6576,
+            "RMSE": 1.9034,
+            "Dir_Acc": 44.98
+        },
+        "ARIMA": {
+            "MAE": 0.0624,
+            "RMSE": 0.1001,
+            "Dir_Acc": 53.32
+        }
+    },
+    "natural_gas": {
+        "Test_Size": 647,
+        "Naive": {
+            "MAE": 0.1084,
+            "RMSE": 0.2133,
+            "Dir_Acc": 3.71
+        },
+        "Prophet": {
+            "MAE": 3.9994,
+            "RMSE": 4.5504,
+            "Dir_Acc": 47.91
+        },
+        "ARIMA": {
+            "MAE": 0.109,
+            "RMSE": 0.2125,
+            "Dir_Acc": 49.46
+        }
+    },
+    "crude_oil": {
+        "Test_Size": 647,
+        "Naive": {
+            "MAE": 1.3379,
+            "RMSE": 2.1458,
+            "Dir_Acc": 3.86
+        },
+        "Prophet": {
+            "MAE": 13.8102,
+            "RMSE": 19.5838,
+            "Dir_Acc": 48.22
+        },
+        "ARIMA": {
+            "MAE": 1.3389,
+            "RMSE": 2.1433,
+            "Dir_Acc": 50.54
+        }
+    },
+    "wheat": {
+        "Test_Size": 647,
+        "Naive": {
+            "MAE": 7.0537,
+            "RMSE": 9.4363,
+            "Dir_Acc": 6.18
+        },
+        "Prophet": {
+            "MAE": 293.9378,
+            "RMSE": 335.4862,
+            "Dir_Acc": 49.0
+        },
+        "ARIMA": {
+            "MAE": 7.1049,
+            "RMSE": 9.43,
+            "Dir_Acc": 48.22
+        }
+    }
+}

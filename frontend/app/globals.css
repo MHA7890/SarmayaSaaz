@@ -1,0 +1,209 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Design tokens
+
+   Every colour is a channel triple so Tailwind's <alpha-value> works. Themes
+   swap by redefining the same names under .dark - no component ever hardcodes
+   a hex, which is what let the previous build's light mode rot into ~40
+   !important overrides.
+   ========================================================================== */
+:root {
+  --font-sans: "Inter";
+  --font-mono: "JetBrains Mono";
+
+  /* Light surfaces */
+  --bg: 248 250 252;
+  --surface: 255 255 255;
+  --surface-high: 241 245 249;
+  --surface-inset: 248 250 252;
+  --line: 226 232 240;
+
+  /* Light ink */
+  --text: 15 23 42;
+  --muted: 51 65 85;
+  --dim: 100 116 139;
+
+  /* Light accents */
+  --accent: 79 70 229;
+  --accent-soft: 224 231 255;
+
+  /* Status - direction. Never the sole carrier of meaning: every use is
+     paired with an arrow glyph and a signed number. */
+  --pos: 4 120 87;
+  --neg: 190 18 60;
+  --warn: 180 83 9;
+
+  /* Categorical series. Validated all-pairs for protan/deutan/tritan
+     separation and >=3:1 against the light surface. Assigned in fixed order,
+     never cycled. */
+  --series-1: 85 96 228;
+  --series-2: 181 121 0;
+  --series-3: 18 153 107;
+
+  /* Heatmap magnitude ramp, low -> high. Not channel triples: each step is a
+     finished rgba so it composites over whatever surface sits behind the cell,
+     and each carries the text colour that stays readable on it (every step
+     clears WCAG AA at the 11px the cells use).
+
+     Light and dark need genuinely different ramps, not one ramp with swapped
+     tokens. On dark, magnitude reads as *brighter* and ends at yellow; on
+     white a yellow maximum is nearly invisible, so light runs the same green
+     family the other way and ends deep. */
+  --heat-0: rgba(148, 163, 184, 0.16);
+  --heat-0-fg: rgb(var(--text));
+  --heat-1: rgba(45, 212, 191, 0.32);
+  --heat-1-fg: rgb(var(--text));
+  --heat-2: rgba(16, 185, 129, 0.5);
+  --heat-2-fg: rgb(var(--text));
+  --heat-3: rgba(5, 150, 105, 0.68);
+  --heat-3-fg: rgb(var(--text));
+  --heat-4: rgba(6, 110, 80, 0.92);
+  --heat-4-fg: rgb(236, 253, 245);
+  --heat-5: rgba(6, 78, 59, 0.95);
+  --heat-5-fg: rgb(236, 253, 245);
+}
+
+.dark {
+  --bg: 11 19 38;
+  --surface: 23 31 51;
+  --surface-high: 34 42 61;
+  --surface-inset: 19 27 46;
+  --line: 45 52 73;
+
+  --text: 218 226 253;
+  --muted: 198 197 213;
+  --dim: 144 143 158;
+
+  --accent: 129 140 248;
+  --accent-soft: 49 57 101;
+
+  --pos: 52 211 153;
+  --neg: 251 113 133;
+  --warn: 245 158 11;
+
+  /* Re-stepped for the dark surface, not flipped. */
+  --series-1: 123 131 236;
+  --series-2: 201 133 0;
+  --series-3: 23 169 122;
+
+  /* Heatmap ramp, dark theme: teal -> green -> lime -> yellow, rising in
+     lightness so it reads as magnitude. Multi-hue but monotone in lightness,
+     which also keeps it legible for red-green colour blindness. */
+  --heat-0: rgba(148, 163, 184, 0.16);
+  --heat-0-fg: rgb(var(--text));
+  --heat-1: rgba(45, 212, 191, 0.26);
+  --heat-1-fg: rgb(var(--text));
+  --heat-2: rgba(16, 185, 129, 0.44);
+  --heat-2-fg: rgb(var(--text));
+  --heat-3: rgba(74, 222, 128, 0.7);
+  --heat-3-fg: rgb(10, 28, 16);
+  --heat-4: rgba(163, 230, 53, 0.8);
+  --heat-4-fg: rgb(10, 28, 16);
+  --heat-5: rgba(250, 204, 21, 0.9);
+  --heat-5-fg: rgb(10, 28, 16);
+}
+
+html {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--text));
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface;
+  }
+
+  .card-pad {
+    @apply rounded-xl border border-line bg-surface p-5;
+  }
+
+  .inset {
+    @apply rounded-lg border border-line bg-surface-inset;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line
+           px-3 py-1 text-xs font-medium transition-colors;
+  }
+
+  .pill-active {
+    @apply border-transparent bg-accent text-white;
+  }
+
+  .label {
+    @apply text-[11px] font-medium uppercase tracking-wider text-dim;
+  }
+
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-accent
+           focus-visible:ring-offset-2 focus-visible:ring-offset-bg;
+  }
+}
+
+/* Ticker marquee. Content is duplicated in the DOM, so translating -50%
+   yields a seamless loop. */
+.ticker-track {
+  display: inline-flex;
+  white-space: nowrap;
+  will-change: transform;
+}
+.ticker-mask:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgb(var(--bg));
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--line));
+  border-radius: 5px;
+  border: 2px solid rgb(var(--bg));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--dim));
+}
+
+/* Recharts leaves a focus outline on the surface wrapper. */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}

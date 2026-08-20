@@ -1,0 +1,150 @@
+{
+  "Balanced": {
+    "7d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.011883,
+      "Path": "Balanced_7d_LightGBM.pkl"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.017518,
+      "Path": "Balanced_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.027233,
+      "Path": "Balanced_28d_LightGBM.pkl"
+    },
+    "42d": {
+      "Winning_Model": "XGBoost",
+      "MAE": 0.035144,
+      "Path": "Balanced_42d_XGBoost.pkl"
+    },
+    "60d": {
+      "Winning_Model": "XGBoost",
+      "MAE": 0.045561,
+      "Path": "Balanced_60d_XGBoost.pkl"
+    },
+    "90d": {
+      "Winning_Model": "XGBoost",
+      "MAE": 0.056382,
+      "Path": "Balanced_90d_XGBoost.pkl"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.065599,
+      "Path": "Balanced_120d_LSTM.pt"
+    }
+  },
+  "Equity": {
+    "7d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.026709,
+      "Path": "Equity_7d_LSTM.pt"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.03722,
+      "Path": "Equity_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.054882,
+      "Path": "Equity_28d_LightGBM.pkl"
+    },
+    "42d": {
+      "Winning_Model": "XGBoost",
+      "MAE": 0.066452,
+      "Path": "Equity_42d_XGBoost.pkl"
+    },
+    "60d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.074024,
+      "Path": "Equity_60d_LightGBM.pkl"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.088012,
+      "Path": "Equity_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.104527,
+      "Path": "Equity_120d_LSTM.pt"
+    }
+  },
+  "Income": {
+    "7d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.003713,
+      "Path": "Income_7d_LightGBM.pkl"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.006684,
+      "Path": "Income_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.012886,
+      "Path": "Income_28d_LightGBM.pkl"
+    },
+    "42d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.018504,
+      "Path": "Income_42d_LightGBM.pkl"
+    },
+    "60d": {
+      "Winning_Model": "XGBoost",
+      "MAE": 0.029458,
+      "Path": "Income_60d_XGBoost.pkl"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.038452,
+      "Path": "Income_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.046736,
+      "Path": "Income_120d_LightGBM.pkl"
+    }
+  },
+  "MoneyMarket": {
+    "7d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.003486,
+      "Path": "MoneyMarket_7d_LightGBM.pkl"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.005131,
+      "Path": "MoneyMarket_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.010289,
+      "Path": "MoneyMarket_28d_LSTM.pt"
+    },
+    "42d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.013015,
+      "Path": "MoneyMarket_42d_LSTM.pt"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.02039,
+      "Path": "MoneyMarket_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.027924,
+      "Path": "MoneyMarket_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.035699,
+      "Path": "MoneyMarket_120d_LSTM.pt"
+    }
+  }
+}

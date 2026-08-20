@@ -1,0 +1,140 @@
+{
+    "gold": {
+        "Test_Size": 637,
+        "XGB_Price_Target": {
+            "MAE": 1738.2523,
+            "RMSE": 1952.7566,
+            "Dir_Acc": 40.97
+        },
+        "XGB_Return_Target": {
+            "MAE": 36.8494,
+            "RMSE": 59.5345,
+            "Dir_Acc": 49.29
+        },
+        "LGB_Price_Target": {
+            "MAE": 1740.3318,
+            "RMSE": 1955.0193,
+            "Dir_Acc": 40.97
+        },
+        "LGB_Return_Target": {
+            "MAE": 36.0378,
+            "RMSE": 57.8892,
+            "Dir_Acc": 51.49
+        }
+    },
+    "silver": {
+        "Test_Size": 637,
+        "XGB_Price_Target": {
+            "MAE": 23.6919,
+            "RMSE": 30.628,
+            "Dir_Acc": 42.07
+        },
+        "XGB_Return_Target": {
+            "MAE": 1.0655,
+            "RMSE": 2.2937,
+            "Dir_Acc": 50.24
+        },
+        "LGB_Price_Target": {
+            "MAE": 23.6925,
+            "RMSE": 30.7092,
+            "Dir_Acc": 42.07
+        },
+        "LGB_Return_Target": {
+            "MAE": 1.081,
+            "RMSE": 2.3162,
+            "Dir_Acc": 51.65
+        }
+    },
+    "copper": {
+        "Test_Size": 637,
+        "XGB_Price_Target": {
+            "MAE": 1.5739,
+            "RMSE": 1.7048,
+            "Dir_Acc": 44.9
+        },
+        "XGB_Return_Target": {
+            "MAE": 0.0651,
+            "RMSE": 0.1023,
+            "Dir_Acc": 49.92
+        },
+        "LGB_Price_Target": {
+            "MAE": 1.5492,
+            "RMSE": 1.6759,
+            "Dir_Acc": 44.74
+        },
+        "LGB_Return_Target": {
+            "MAE": 0.0653,
+            "RMSE": 0.1027,
+            "Dir_Acc": 51.81
+        }
+    },
+    "natural_gas": {
+        "Test_Size": 637,
+        "XGB_Price_Target": {
+            "MAE": 1.0365,
+            "RMSE": 1.4539,
+            "Dir_Acc": 46.47
+        },
+        "XGB_Return_Target": {
+            "MAE": 0.1186,
+            "RMSE": 0.217,
+            "Dir_Acc": 47.88
+        },
+        "LGB_Price_Target": {
+            "MAE": 1.0629,
+            "RMSE": 1.4608,
+            "Dir_Acc": 46.62
+        },
+        "LGB_Return_Target": {
+            "MAE": 0.1171,
+            "RMSE": 0.2171,
+            "Dir_Acc": 48.35
+        }
+    },
+    "crude_oil": {
+        "Test_Size": 637,
+        "XGB_Price_Target": {
+            "MAE": 11.7382,
+            "RMSE": 16.3425,
+            "Dir_Acc": 50.39
+        },
+        "XGB_Return_Target": {
+            "MAE": 1.4159,
+            "RMSE": 2.295,
+            "Dir_Acc": 44.9
+        },
+        "LGB_Price_Target": {
+            "MAE": 12.0059,
+            "RMSE": 15.9916,
+            "Dir_Acc": 50.08
+        },
+        "LGB_Return_Target": {
+            "MAE": 68.884,
+            "RMSE": 298.7584,
+            "Dir_Acc": 46.31
+        }
+    },
+    "wheat": {
+        "Test_Size": 637,
+        "XGB_Price_Target": {
+            "MAE": 34.2355,
+            "RMSE": 44.8357,
+            "Dir_Acc": 51.49
+        },
+        "XGB_Return_Target": {
+            "MAE": 7.1885,
+            "RMSE": 9.6626,
+            "Dir_Acc": 50.71
+        },
+        "LGB_Price_Target": {
+            "MAE": 38.6625,
+            "RMSE": 48.9921,
+            "Dir_Acc": 50.08
+        },
+        "LGB_Return_Target": {
+            "MAE": 7.356,
+            "RMSE": 9.9752,
+            "Dir_Acc": 47.41
+        }
+    }
+}

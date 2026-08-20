@@ -1,0 +1,261 @@
+{
+  "Cement_Construction": {
+    "7d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.05494,
+      "Path": "Cement_Construction_7d_LightGBM.pkl"
+    },
+    "14d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.078056,
+      "Path": "Cement_Construction_14d_LightGBM.pkl"
+    },
+    "28d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.114559,
+      "Path": "Cement_Construction_28d_LightGBM.pkl"
+    },
+    "42d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.141268,
+      "Path": "Cement_Construction_42d_LSTM.pt"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.173215,
+      "Path": "Cement_Construction_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.213807,
+      "Path": "Cement_Construction_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.211717,
+      "Path": "Cement_Construction_120d_LSTM.pt"
+    }
+  },
+  "Consumer_Autos": {
+    "7d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.052308,
+      "Path": "Consumer_Autos_7d_LightGBM.pkl"
+    },
+    "14d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.077602,
+      "Path": "Consumer_Autos_14d_LightGBM.pkl"
+    },
+    "28d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.120376,
+      "Path": "Consumer_Autos_28d_LightGBM.pkl"
+    },
+    "42d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.14678,
+      "Path": "Consumer_Autos_42d_LightGBM.pkl"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.170039,
+      "Path": "Consumer_Autos_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.203738,
+      "Path": "Consumer_Autos_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.177371,
+      "Path": "Consumer_Autos_120d_LSTM.pt"
+    }
+  },
+  "Energy_Power": {
+    "7d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.050021,
+      "Path": "Energy_Power_7d_LightGBM.pkl"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.0718,
+      "Path": "Energy_Power_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.096587,
+      "Path": "Energy_Power_28d_LSTM.pt"
+    },
+    "42d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.100931,
+      "Path": "Energy_Power_42d_LSTM.pt"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.110738,
+      "Path": "Energy_Power_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.135433,
+      "Path": "Energy_Power_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.171045,
+      "Path": "Energy_Power_120d_LSTM.pt"
+    }
+  },
+  "Fertilizers_Chemicals": {
+    "7d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.042971,
+      "Path": "Fertilizers_Chemicals_7d_LSTM.pt"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.06132,
+      "Path": "Fertilizers_Chemicals_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.090643,
+      "Path": "Fertilizers_Chemicals_28d_LSTM.pt"
+    },
+    "42d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.115073,
+      "Path": "Fertilizers_Chemicals_42d_LSTM.pt"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.141071,
+      "Path": "Fertilizers_Chemicals_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.17737,
+      "Path": "Fertilizers_Chemicals_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.180994,
+      "Path": "Fertilizers_Chemicals_120d_LSTM.pt"
+    }
+  },
+  "Financials": {
+    "7d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.052647,
+      "Path": "Financials_7d_LightGBM.pkl"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.075361,
+      "Path": "Financials_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.11139,
+      "Path": "Financials_28d_LSTM.pt"
+    },
+    "42d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.139792,
+      "Path": "Financials_42d_LSTM.pt"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.181464,
+      "Path": "Financials_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.252714,
+      "Path": "Financials_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LightGBM",
+      "MAE": 0.271293,
+      "Path": "Financials_120d_LightGBM.pkl"
+    }
+  },
+  "Pharmaceuticals": {
+    "7d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.044856,
+      "Path": "Pharmaceuticals_7d_LSTM.pt"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.06255,
+      "Path": "Pharmaceuticals_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.087668,
+      "Path": "Pharmaceuticals_28d_LSTM.pt"
+    },
+    "42d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.102629,
+      "Path": "Pharmaceuticals_42d_LSTM.pt"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.108771,
+      "Path": "Pharmaceuticals_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.108779,
+      "Path": "Pharmaceuticals_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.205558,
+      "Path": "Pharmaceuticals_120d_LSTM.pt"
+    }
+  },
+  "Tech_Telecom": {
+    "7d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.05659,
+      "Path": "Tech_Telecom_7d_LSTM.pt"
+    },
+    "14d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.080875,
+      "Path": "Tech_Telecom_14d_LSTM.pt"
+    },
+    "28d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.122952,
+      "Path": "Tech_Telecom_28d_LSTM.pt"
+    },
+    "42d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.165557,
+      "Path": "Tech_Telecom_42d_LSTM.pt"
+    },
+    "60d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.201746,
+      "Path": "Tech_Telecom_60d_LSTM.pt"
+    },
+    "90d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.21466,
+      "Path": "Tech_Telecom_90d_LSTM.pt"
+    },
+    "120d": {
+      "Winning_Model": "LSTM",
+      "MAE": 0.253721,
+      "Path": "Tech_Telecom_120d_LSTM.pt"
+    }
+  }
+}

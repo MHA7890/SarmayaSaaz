@@ -1,0 +1,161 @@
+"""
+Collect 10y daily OHLCV for every crypto asset used in the project, from
+Binance's public spot klines API (no auth required).
+
+Source: https://api.binance.com/api/v3/klines
+Output: data-new/crypto-data/<TICKER>.csv
+"""
+from __future__ import annotations
+
+import time
+from datetime import datetime, timedelta, timezone
+
+import pandas as pd
+import requests
+
+from data_new_common import DATA_NEW, clean_ohlcv, clip_last_n_years, get_logger
+
+logger = get_logger("collect_crypto")
+
+OUT_DIR = DATA_NEW / "crypto-data"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+TICKERS = [
+    "BTC", "ETH", "SOL", "BNB", "AVAX", "ADA", "NEAR", "SUI", "APT", "TRX",
+    "LINK", "AAVE", "UNI", "CRV", "LDO", "PENDLE", "SNX",
+    "TAO", "FET", "RNDR", "FIL", "GRT", "INJ", "IMX",
+    "PEPE", "WIF",
+]
+
+# Binance renamed/relisted a few of these since the tickers were curated.
+SYMBOL_OVERRIDES = {
+    "RNDR": "RENDERUSDT",
+}
+
+RETURN_THRESHOLD = 0.60  # crypto is volatile; this only catches bad prints
+YEARS = 10
+KLINES_URL = "https://api.binance.com/api/v3/klines"
+
+
+def binance_symbol(ticker: str) -> str:
+    return SYMBOL_OVERRIDES.get(ticker, f"{ticker}USDT")
+
+
+def _get_with_retry(url: str, params: dict, retries: int = 4):
+    last_err = None
+    for attempt in range(retries):
+        try:
+            resp = requests.get(url, params=params, timeout=20)
+            if resp.status_code != 200:
+                raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:200]}")
+            return resp
+        except Exception as e:
+            last_err = e
+            time.sleep(1.5 * (attempt + 1))
+    raise last_err
+
+
+def fetch_klines(symbol: str, start_ms: int, end_ms: int) -> list[list]:
+    out = []
+    cursor = start_ms
+    while cursor < end_ms:
+        resp = _get_with_retry(
+            KLINES_URL,
+            {
+                "symbol": symbol,
+                "interval": "1d",
+                "startTime": cursor,
+                "endTime": end_ms,
+                "limit": 1000,
+            },
+        )
+        batch = resp.json()
+        if not batch:
+            break
+        out.extend(batch)
+        last_open = batch[-1][0]
+        if last_open <= cursor:
+            break
+        cursor = last_open + 1
+        if len(batch) < 1000:
+            break
+        time.sleep(0.2)
+    return out
+
+
+def _drop_forming_bar(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Binance's klines endpoint happily returns the current UTC day's candle
+    while it's still accumulating - crypto trades 24/7, so unlike an exchange
+    with fixed hours there's never a point where "today" is guaranteed
+    closed. That row's Close is just whatever the price is right now, not a
+    settled value (the same issue found in the TradingView commodities feed:
+    Open/High can be final while Low/Close are still moving). A bar dated
+    strictly before today has had its full 24h window elapse and is safe.
+    """
+    if df.empty:
+        return df
+    today = pd.Timestamp(datetime.now(timezone.utc).date())
+    if df.index[-1] >= today:
+        return df.iloc[:-1]
+    return df
+
+
+def run(tickers=None):
+    tickers = tickers or TICKERS
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=365 * YEARS + 10)
+    end_ms = int(end.timestamp() * 1000)
+    start_ms = int(start.timestamp() * 1000)
+
+    ok, failed = [], []
+    for ticker in tickers:
+        symbol = binance_symbol(ticker)
+        logger.info(f"Fetching {ticker} ({symbol}) from Binance...")
+        try:
+            klines = fetch_klines(symbol, start_ms, end_ms)
+            if not klines:
+                logger.warning(f"  -> No data returned for {symbol}")
+                failed.append(ticker)
+                continue
+
+            df = pd.DataFrame(klines, columns=[
+                "OpenTime", "Open", "High", "Low", "Close", "Volume",
+                "CloseTime", "QuoteVolume", "Trades", "TakerBaseVol", "TakerQuoteVol", "Ignore",
+            ])
+            df["Date"] = pd.to_datetime(df["OpenTime"], unit="ms").dt.normalize()
+            for c in ["Open", "High", "Low", "Close", "Volume"]:
+                df[c] = pd.to_numeric(df[c], errors="coerce")
+            df = df[["Date", "Open", "High", "Low", "Close", "Volume"]].set_index("Date")
+            df = df[~df.index.duplicated(keep="last")].sort_index()
+
+            df, removed = clean_ohlcv(df, return_threshold=RETURN_THRESHOLD)
+            df = clip_last_n_years(df, YEARS)
+            df = _drop_forming_bar(df)
+
+            if df.empty:
+                logger.warning(f"  -> {ticker}: nothing left after cleaning")
+                failed.append(ticker)
+                continue
+
+            out_path = OUT_DIR / f"{ticker}.csv"
+            df.to_csv(out_path)
+            logger.info(f"  -> Saved {ticker}: {len(df)} rows ({df.index.min().date()} -> {df.index.max().date()}), removed {removed} bad rows")
+            ok.append(ticker)
+        except Exception as e:
+            logger.error(f"  -> FAILED {ticker} ({symbol}): {e}")
+            failed.append(ticker)
+        time.sleep(0.3)
+
+    logger.info("=" * 60)
+    logger.info(f"Crypto collection complete: {len(ok)} ok, {len(failed)} failed")
+    if failed:
+        logger.warning(f"Failed tickers: {failed}")
+    return len(failed)
+
+
+if __name__ == "__main__":
+    import sys
+    # Non-zero exit on any failure so a scheduled run does not report success
+    # while some tickers quietly went stale.
+    raise SystemExit(1 if run(sys.argv[1:] or None) else 0)

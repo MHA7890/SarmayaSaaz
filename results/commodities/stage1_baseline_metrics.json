@@ -1,0 +1,32 @@
+{
+    "gold": {
+        "MAE": 34.7,
+        "RMSE": 56.4847,
+        "Directional_Accuracy_%": 3.71
+    },
+    "silver": {
+        "MAE": 1.0318,
+        "RMSE": 2.2689,
+        "Directional_Accuracy_%": 3.71
+    },
+    "copper": {
+        "MAE": 0.0627,
+        "RMSE": 0.1003,
+        "Directional_Accuracy_%": 4.02
+    },
+    "natural_gas": {
+        "MAE": 0.1084,
+        "RMSE": 0.2133,
+        "Directional_Accuracy_%": 3.71
+    },
+    "crude_oil": {
+        "MAE": 1.3379,
+        "RMSE": 2.1458,
+        "Directional_Accuracy_%": 3.86
+    },
+    "wheat": {
+        "MAE": 7.0537,
+        "RMSE": 9.4363,
+        "Directional_Accuracy_%": 6.18
+    }
+}

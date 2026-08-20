@@ -1,0 +1,318 @@
+{
+    "Cluster_0": {
+        "7d": {
+            "XGBoost": 0.8556,
+            "LightGBM": 0.8899,
+            "CatBoost": 0.8872,
+            "RandomForest": 0.9031,
+            "LSTM": 0.9839,
+            "GRU": 0.9838,
+            "Transformer": 0.9845,
+            "NBEATS_Lite": 0.9831,
+            "TFT_Lite": 0.9844
+        },
+        "14d": {
+            "XGBoost": 0.8218,
+            "LightGBM": 0.8348,
+            "CatBoost": 0.8456,
+            "RandomForest": 0.8499,
+            "LSTM": 0.9683,
+            "GRU": 0.9671,
+            "Transformer": 0.969,
+            "NBEATS_Lite": 0.96,
+            "TFT_Lite": 0.9678
+        },
+        "28d": {
+            "XGBoost": 0.5999,
+            "LightGBM": 0.686,
+            "CatBoost": 0.7175,
+            "RandomForest": 0.7725,
+            "LSTM": 0.9309,
+            "GRU": 0.9364,
+            "Transformer": 0.9409,
+            "NBEATS_Lite": 0.9254,
+            "TFT_Lite": 0.9355
+        },
+        "42d": {
+            "XGBoost": 0.4661,
+            "LightGBM": 0.6318,
+            "CatBoost": 0.6795,
+            "RandomForest": 0.698,
+            "LSTM": 0.9264,
+            "GRU": 0.9282,
+            "Transformer": 0.9272,
+            "NBEATS_Lite": 0.9126,
+            "TFT_Lite": 0.9296
+        },
+        "60d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.5051,
+            "RandomForest": 0.5951,
+            "LSTM": 0.899,
+            "GRU": 0.912,
+            "Transformer": 0.9166,
+            "NBEATS_Lite": 0.9031,
+            "TFT_Lite": 0.9034
+        },
+        "90d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.4,
+            "RandomForest": 0.4491,
+            "LSTM": 0.7886,
+            "GRU": 0.8076,
+            "Transformer": 0.8136,
+            "NBEATS_Lite": 0.7457,
+            "TFT_Lite": 0.8322
+        },
+        "120d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.4,
+            "RandomForest": 0.4,
+            "LSTM": 0.7616,
+            "GRU": 0.7862,
+            "Transformer": 0.7748,
+            "NBEATS_Lite": 0.7581,
+            "TFT_Lite": 0.7792
+        }
+    },
+    "Cluster_1": {
+        "7d": {
+            "XGBoost": 0.9139,
+            "LightGBM": 0.9296,
+            "CatBoost": 0.9375,
+            "RandomForest": 0.9534,
+            "LSTM": 0.9978,
+            "GRU": 0.9979,
+            "Transformer": 0.9977,
+            "NBEATS_Lite": 0.9954,
+            "TFT_Lite": 0.998
+        },
+        "14d": {
+            "XGBoost": 0.8899,
+            "LightGBM": 0.8925,
+            "CatBoost": 0.9029,
+            "RandomForest": 0.9307,
+            "LSTM": 0.9957,
+            "GRU": 0.9959,
+            "Transformer": 0.9961,
+            "NBEATS_Lite": 0.9938,
+            "TFT_Lite": 0.9962
+        },
+        "28d": {
+            "XGBoost": 0.8204,
+            "LightGBM": 0.8321,
+            "CatBoost": 0.8398,
+            "RandomForest": 0.864,
+            "LSTM": 0.9916,
+            "GRU": 0.9894,
+            "Transformer": 0.9917,
+            "NBEATS_Lite": 0.9886,
+            "TFT_Lite": 0.9919
+        },
+        "42d": {
+            "XGBoost": 0.8087,
+            "LightGBM": 0.8179,
+            "CatBoost": 0.8179,
+            "RandomForest": 0.8559,
+            "LSTM": 0.9853,
+            "GRU": 0.9833,
+            "Transformer": 0.9849,
+            "NBEATS_Lite": 0.9836,
+            "TFT_Lite": 0.985
+        },
+        "60d": {
+            "XGBoost": 0.7604,
+            "LightGBM": 0.776,
+            "CatBoost": 0.7622,
+            "RandomForest": 0.8202,
+            "LSTM": 0.9799,
+            "GRU": 0.9749,
+            "Transformer": 0.9785,
+            "NBEATS_Lite": 0.9784,
+            "TFT_Lite": 0.9797
+        },
+        "90d": {
+            "XGBoost": 0.6414,
+            "LightGBM": 0.6917,
+            "CatBoost": 0.7028,
+            "RandomForest": 0.7512,
+            "LSTM": 0.9776,
+            "GRU": 0.9684,
+            "Transformer": 0.978,
+            "NBEATS_Lite": 0.9677,
+            "TFT_Lite": 0.9784
+        },
+        "120d": {
+            "XGBoost": 0.6448,
+            "LightGBM": 0.6427,
+            "CatBoost": 0.6266,
+            "RandomForest": 0.6734,
+            "LSTM": 0.9763,
+            "GRU": 0.9706,
+            "Transformer": 0.9767,
+            "NBEATS_Lite": 0.955,
+            "TFT_Lite": 0.9763
+        }
+    },
+    "Cluster_2": {
+        "7d": {
+            "XGBoost": 0.5482,
+            "LightGBM": 0.4,
+            "CatBoost": 0.4,
+            "RandomForest": 0.7496,
+            "LSTM": 0.9935,
+            "GRU": 0.9893,
+            "Transformer": 0.993,
+            "NBEATS_Lite": 0.9858,
+            "TFT_Lite": 0.9944
+        },
+        "14d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.5688,
+            "RandomForest": 0.5878,
+            "LSTM": 0.9916,
+            "GRU": 0.9864,
+            "Transformer": 0.9913,
+            "NBEATS_Lite": 0.9812,
+            "TFT_Lite": 0.9917
+        },
+        "28d": {
+            "XGBoost": 0.5325,
+            "LightGBM": 0.4,
+            "CatBoost": 0.6018,
+            "RandomForest": 0.5399,
+            "LSTM": 0.9836,
+            "GRU": 0.9794,
+            "Transformer": 0.9845,
+            "NBEATS_Lite": 0.9653,
+            "TFT_Lite": 0.9854
+        },
+        "42d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.4,
+            "RandomForest": 0.4,
+            "LSTM": 0.9704,
+            "GRU": 0.9669,
+            "Transformer": 0.9697,
+            "NBEATS_Lite": 0.9632,
+            "TFT_Lite": 0.97
+        },
+        "60d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.4,
+            "RandomForest": 0.4,
+            "LSTM": 0.9556,
+            "GRU": 0.9387,
+            "Transformer": 0.9616,
+            "NBEATS_Lite": 0.9299,
+            "TFT_Lite": 0.9567
+        },
+        "90d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.4,
+            "RandomForest": 0.4,
+            "LSTM": 0.9411,
+            "GRU": 0.9181,
+            "Transformer": 0.9513,
+            "NBEATS_Lite": 0.9093,
+            "TFT_Lite": 0.9401
+        },
+        "120d": {
+            "XGBoost": 0.6156,
+            "LightGBM": 0.5587,
+            "CatBoost": 0.5849,
+            "RandomForest": 0.7159,
+            "LSTM": 0.9319,
+            "GRU": 0.9379,
+            "Transformer": 0.968,
+            "NBEATS_Lite": 0.922,
+            "TFT_Lite": 0.9307
+        }
+    },
+    "Cluster_3": {
+        "7d": {
+            "XGBoost": 0.8733,
+            "LightGBM": 0.8845,
+            "CatBoost": 0.8814,
+            "RandomForest": 0.9032,
+            "LSTM": 0.9642,
+            "GRU": 0.9656,
+            "Transformer": 0.967,
+            "NBEATS_Lite": 0.958,
+            "TFT_Lite": 0.9663
+        },
+        "14d": {
+            "XGBoost": 0.7838,
+            "LightGBM": 0.8464,
+            "CatBoost": 0.8443,
+            "RandomForest": 0.8426,
+            "LSTM": 0.9315,
+            "GRU": 0.931,
+            "Transformer": 0.9324,
+            "NBEATS_Lite": 0.9339,
+            "TFT_Lite": 0.9325
+        },
+        "28d": {
+            "XGBoost": 0.702,
+            "LightGBM": 0.7489,
+            "CatBoost": 0.7157,
+            "RandomForest": 0.7895,
+            "LSTM": 0.9028,
+            "GRU": 0.8907,
+            "Transformer": 0.9099,
+            "NBEATS_Lite": 0.9071,
+            "TFT_Lite": 0.8995
+        },
+        "42d": {
+            "XGBoost": 0.6417,
+            "LightGBM": 0.7092,
+            "CatBoost": 0.7273,
+            "RandomForest": 0.7527,
+            "LSTM": 0.8909,
+            "GRU": 0.8864,
+            "Transformer": 0.8899,
+            "NBEATS_Lite": 0.8626,
+            "TFT_Lite": 0.9038
+        },
+        "60d": {
+            "XGBoost": 0.6424,
+            "LightGBM": 0.6894,
+            "CatBoost": 0.6891,
+            "RandomForest": 0.6773,
+            "LSTM": 0.8589,
+            "GRU": 0.8757,
+            "Transformer": 0.876,
+            "NBEATS_Lite": 0.8225,
+            "TFT_Lite": 0.8689
+        },
+        "90d": {
+            "XGBoost": 0.5387,
+            "LightGBM": 0.6059,
+            "CatBoost": 0.6327,
+            "RandomForest": 0.6934,
+            "LSTM": 0.8147,
+            "GRU": 0.8228,
+            "Transformer": 0.8281,
+            "NBEATS_Lite": 0.7609,
+            "TFT_Lite": 0.8334
+        },
+        "120d": {
+            "XGBoost": 0.4,
+            "LightGBM": 0.4,
+            "CatBoost": 0.4925,
+            "RandomForest": 0.4,
+            "LSTM": 0.7795,
+            "GRU": 0.7926,
+            "Transformer": 0.7326,
+            "NBEATS_Lite": 0.6839,
+            "TFT_Lite": 0.8005
+        }
+    }
+}

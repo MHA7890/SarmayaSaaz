@@ -1,0 +1,35 @@
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+frontend/.env.local
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.turbo/
+
+# --- Large / derived data ---
+# models/ (~1GB) and the 90MB MUFAP export are tracked deliberately so the repo
+# is self-contained. Nothing here exceeds GitHub's 100MB per-file hard limit.
+*.zip
+
+# --- Logs & scratch ---
+*.log
+.DS_Store
+Thumbs.db
+
+# --- Pre-swap production artifact backup (v1 models), 365MB ---
+_backup_v1/

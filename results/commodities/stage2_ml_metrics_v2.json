@@ -1,0 +1,230 @@
+{
+    "gold": {
+        "XGBoost": {
+            "MAE": 35.1383,
+            "RMSE": 56.9697,
+            "MAPE": 0.98,
+            "Dir_Acc": 55.43,
+            "R2": 0.9959,
+            "Naive_MAE": 35.1844,
+            "Improvement_Pct": 0.13
+        },
+        "LightGBM": {
+            "MAE": 35.1369,
+            "RMSE": 56.9679,
+            "MAPE": 0.98,
+            "Dir_Acc": 55.43,
+            "R2": 0.9959,
+            "Naive_MAE": 35.1844,
+            "Improvement_Pct": 0.14
+        },
+        "CatBoost": {
+            "MAE": 35.1996,
+            "RMSE": 56.9823,
+            "MAPE": 0.98,
+            "Dir_Acc": 52.76,
+            "R2": 0.9959,
+            "Naive_MAE": 35.1844,
+            "Improvement_Pct": -0.04
+        },
+        "RandomForest": {
+            "MAE": 35.4183,
+            "RMSE": 56.6925,
+            "MAPE": 0.98,
+            "Dir_Acc": 46.14,
+            "R2": 0.9959,
+            "Naive_MAE": 35.1844,
+            "Improvement_Pct": -0.66
+        }
+    },
+    "silver": {
+        "XGBoost": {
+            "MAE": 1.045,
+            "RMSE": 2.2898,
+            "MAPE": 1.93,
+            "Dir_Acc": 52.28,
+            "R2": 0.9866,
+            "Naive_MAE": 1.0461,
+            "Improvement_Pct": 0.1
+        },
+        "LightGBM": {
+            "MAE": 1.0582,
+            "RMSE": 2.2847,
+            "MAPE": 1.95,
+            "Dir_Acc": 51.02,
+            "R2": 0.9866,
+            "Naive_MAE": 1.0461,
+            "Improvement_Pct": -1.16
+        },
+        "CatBoost": {
+            "MAE": 1.0447,
+            "RMSE": 2.2849,
+            "MAPE": 1.93,
+            "Dir_Acc": 55.12,
+            "R2": 0.9866,
+            "Naive_MAE": 1.0461,
+            "Improvement_Pct": 0.13
+        },
+        "RandomForest": {
+            "MAE": 1.1224,
+            "RMSE": 2.2995,
+            "MAPE": 2.15,
+            "Dir_Acc": 55.12,
+            "R2": 0.9864,
+            "Naive_MAE": 1.0461,
+            "Improvement_Pct": -7.3
+        }
+    },
+    "copper": {
+        "XGBoost": {
+            "MAE": 0.0659,
+            "RMSE": 0.1041,
+            "MAPE": 1.31,
+            "Dir_Acc": 50.43,
+            "R2": 0.9795,
+            "Naive_MAE": 0.0657,
+            "Improvement_Pct": -0.27
+        },
+        "LightGBM": {
+            "MAE": 0.0656,
+            "RMSE": 0.1042,
+            "MAPE": 1.3,
+            "Dir_Acc": 52.83,
+            "R2": 0.9795,
+            "Naive_MAE": 0.0657,
+            "Improvement_Pct": 0.14
+        },
+        "CatBoost": {
+            "MAE": 0.0654,
+            "RMSE": 0.1042,
+            "MAPE": 1.3,
+            "Dir_Acc": 50.43,
+            "R2": 0.9794,
+            "Naive_MAE": 0.0657,
+            "Improvement_Pct": 0.36
+        },
+        "RandomForest": {
+            "MAE": 0.0657,
+            "RMSE": 0.1041,
+            "MAPE": 1.31,
+            "Dir_Acc": 51.97,
+            "R2": 0.9795,
+            "Naive_MAE": 0.0657,
+            "Improvement_Pct": -0.02
+        }
+    },
+    "natural_gas": {
+        "XGBoost": {
+            "MAE": 0.1091,
+            "RMSE": 0.2146,
+            "MAPE": 3.38,
+            "Dir_Acc": 51.02,
+            "R2": 0.9241,
+            "Naive_MAE": 0.1091,
+            "Improvement_Pct": 0.04
+        },
+        "LightGBM": {
+            "MAE": 0.1092,
+            "RMSE": 0.2146,
+            "MAPE": 3.39,
+            "Dir_Acc": 48.51,
+            "R2": 0.9242,
+            "Naive_MAE": 0.1091,
+            "Improvement_Pct": -0.12
+        },
+        "CatBoost": {
+            "MAE": 0.1096,
+            "RMSE": 0.2134,
+            "MAPE": 3.39,
+            "Dir_Acc": 48.19,
+            "R2": 0.925,
+            "Naive_MAE": 0.1091,
+            "Improvement_Pct": -0.44
+        },
+        "RandomForest": {
+            "MAE": 0.1127,
+            "RMSE": 0.2131,
+            "MAPE": 3.45,
+            "Dir_Acc": 47.25,
+            "R2": 0.9252,
+            "Naive_MAE": 0.1091,
+            "Improvement_Pct": -3.33
+        }
+    },
+    "crude_oil": {
+        "XGBoost": {
+            "MAE": 1.4477,
+            "RMSE": 2.3296,
+            "MAPE": 1.92,
+            "Dir_Acc": 49.42,
+            "R2": 0.962,
+            "Naive_MAE": 1.446,
+            "Improvement_Pct": -0.11
+        },
+        "LightGBM": {
+            "MAE": 1.4527,
+            "RMSE": 2.3347,
+            "MAPE": 1.93,
+            "Dir_Acc": 49.03,
+            "R2": 0.9619,
+            "Naive_MAE": 1.446,
+            "Improvement_Pct": -0.46
+        },
+        "CatBoost": {
+            "MAE": 1.452,
+            "RMSE": 2.33,
+            "MAPE": 1.93,
+            "Dir_Acc": 47.49,
+            "R2": 0.962,
+            "Naive_MAE": 1.446,
+            "Improvement_Pct": -0.41
+        },
+        "RandomForest": {
+            "MAE": 1.4727,
+            "RMSE": 2.3836,
+            "MAPE": 1.95,
+            "Dir_Acc": 50.19,
+            "R2": 0.9602,
+            "Naive_MAE": 1.446,
+            "Improvement_Pct": -1.85
+        }
+    },
+    "wheat": {
+        "XGBoost": {
+            "MAE": 7.0172,
+            "RMSE": 9.3769,
+            "MAPE": 1.24,
+            "Dir_Acc": 49.92,
+            "R2": 0.9532,
+            "Naive_MAE": 7.0421,
+            "Improvement_Pct": 0.35
+        },
+        "LightGBM": {
+            "MAE": 7.0707,
+            "RMSE": 9.4558,
+            "MAPE": 1.25,
+            "Dir_Acc": 49.13,
+            "R2": 0.9525,
+            "Naive_MAE": 7.0421,
+            "Improvement_Pct": -0.41
+        },
+        "CatBoost": {
+            "MAE": 7.043,
+            "RMSE": 9.3799,
+            "MAPE": 1.24,
+            "Dir_Acc": 48.66,
+            "R2": 0.9532,
+            "Naive_MAE": 7.0421,
+            "Improvement_Pct": -0.01
+        },
+        "RandomForest": {
+            "MAE": 7.007,
+            "RMSE": 9.3807,
+            "MAPE": 1.24,
+            "Dir_Acc": 51.34,
+            "R2": 0.9532,
+            "Naive_MAE": 7.0421,
+            "Improvement_Pct": 0.5
+        }
+    }
+}

@@ -1,0 +1,82 @@
+[project]
+name = "sarmayasaaz"
+version = "1.0.0"
+description = "Multi-asset AI forecasting engine for Pakistani and global markets"
+requires-python = ">=3.12,<3.13"
+
+dependencies = [
+    # --- Artifact-critical pins -------------------------------------------
+    # models/ contains ~2031 artifacts serialized under these exact versions.
+    # scikit-learn pickles (RandomForest models + every StandardScaler) do NOT
+    # survive minor-version drift: loading 1.7.2 pickles under 1.9.x raises
+    # InconsistentVersionWarning and can silently alter transform output.
+    # Do not bump scikit-learn without re-training and re-serializing.
+    "scikit-learn==1.7.2",
+    "numpy>=2.0,<2.4",
+    # pandas 3.x removed APIs the src/ pipelines rely on (inplace on slices,
+    # positional indexing behaviour). Stay on 2.x.
+    "pandas>=2.2,<3.0",
+
+    # --- Model runtimes ---------------------------------------------------
+    "torch>=2.4,<3.0",
+    # Pinned for the same reason as scikit-learn: 226 XGBoost artifacts are
+    # pickled XGBRegressors, and that path stores the booster via XGBoost's
+    # legacy SerializeToBuffer, which is not stable even across a patch
+    # release. The crypto and PSX artifacts were written by 3.4.0; loading
+    # them under 3.4.1 raises "input stream corrupted" and the engines drop
+    # every XGBoost vote (26 crypto + 49 PSX) into the forecast `warnings`
+    # list. Do not bump without re-serializing.
+    "xgboost==3.4.0",
+    "lightgbm>=4.5,<5.0",
+    "catboost>=1.2,<2.0",
+    "joblib>=1.4",
+
+    # --- Feature engineering / market data --------------------------------
+    "ta>=0.11",
+    "yfinance>=0.2.40",
+    # scripts/collect_commodities_tv.py replays TradingView's chart websocket
+    # protocol. It was undeclared, so the collector only ran outside the venv
+    # - against global pandas 3.x, which this project pins away from.
+    "websocket-client>=1.7",
+    # copper and crude_oil are the only two commodities whose macro inputs are
+    # .xlsx (copper-macro.xlsx, crude-macro.xlsx); pandas needs openpyxl to
+    # read them. Undeclared, so feature engineering silently skipped exactly
+    # those two while reporting success, leaving their model inputs frozen.
+    "openpyxl>=3.1",
+
+    # --- Explainability ---------------------------------------------------
+    "shap>=0.46",
+
+    # --- Sentiment (FinBERT) ---------------------------------------------
+    "transformers>=4.44,<5.0",
+
+    # --- API layer --------------------------------------------------------
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.8",
+    "pydantic-settings>=2.4",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# Only needed to re-run src/commodities/stage2_statistical_models.py.
+stats = ["statsmodels>=0.14", "prophet>=1.1"]
+# Needed only to re-run training-scripts-new/*/02_train_all.py. optuna drives
+# the 3-trial hyperparameter search in crypto/02_train_all.py; tqdm backs the
+# per-epoch progress bars in common/progress.py. Both were undeclared, so a
+# plain `uv sync` would uninstall optuna and break crypto retraining.
+train = ["optuna>=4.0", "tqdm>=4.66"]
+dev = ["pytest>=8.3", "pytest-asyncio>=0.24", "ruff>=0.6"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

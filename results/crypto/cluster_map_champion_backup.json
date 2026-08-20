@@ -1,0 +1,30 @@
+{
+  "_comment": "Authoritative asset->cluster map, extracted from the inference run that produced final_predictions.csv. These are the clusters the models in models/crypto/ were trained under. Do NOT recompute K-Means at runtime: labels permute between runs and the partition drifts with new data, which silently routes assets to models never trained on them.",
+  "_source": "results/crypto/final_predictions.csv",
+  "clusters": {
+    "AAVE": 0,
+    "ADA": 3,
+    "APT": 0,
+    "AVAX": 0,
+    "BNB": 3,
+    "BTC": 1,
+    "CRV": 3,
+    "ETH": 3,
+    "FET": 3,
+    "FIL": 3,
+    "GRT": 1,
+    "IMX": 1,
+    "INJ": 0,
+    "LDO": 0,
+    "LINK": 3,
+    "NEAR": 0,
+    "PENDLE": 0,
+    "RNDR": 3,
+    "SNX": 3,
+    "SOL": 3,
+    "SUI": 0,
+    "TRX": 3,
+    "UNI": 2,
+    "WIF": 0
+  }
+}

@@ -1,0 +1,230 @@
+{
+  "copper": {
+    "XGBoost": {
+      "MAE": 0.25729,
+      "RMSE": 0.355001,
+      "MAPE": 5.0806,
+      "Dir_Acc": 66.0417,
+      "R2": 0.778588,
+      "Naive_MAE": 0.263968,
+      "Improvement_Pct": 2.5299
+    },
+    "LightGBM": {
+      "MAE": 0.257673,
+      "RMSE": 0.354896,
+      "MAPE": 5.0843,
+      "Dir_Acc": 66.0417,
+      "R2": 0.778718,
+      "Naive_MAE": 0.263968,
+      "Improvement_Pct": 2.3846
+    },
+    "CatBoost": {
+      "MAE": 0.257454,
+      "RMSE": 0.355248,
+      "MAPE": 5.0846,
+      "Dir_Acc": 66.0417,
+      "R2": 0.778279,
+      "Naive_MAE": 0.263968,
+      "Improvement_Pct": 2.4675
+    },
+    "RandomForest": {
+      "MAE": 0.283165,
+      "RMSE": 0.374561,
+      "MAPE": 5.5054,
+      "Dir_Acc": 47.0833,
+      "R2": 0.753517,
+      "Naive_MAE": 0.263968,
+      "Improvement_Pct": -7.2727
+    }
+  },
+  "crude_oil": {
+    "XGBoost": {
+      "MAE": 5.101923,
+      "RMSE": 7.724857,
+      "MAPE": 6.7143,
+      "Dir_Acc": 48.643,
+      "R2": 0.596119,
+      "Naive_MAE": 4.977403,
+      "Improvement_Pct": -2.5017
+    },
+    "LightGBM": {
+      "MAE": 5.154748,
+      "RMSE": 7.789818,
+      "MAPE": 6.8162,
+      "Dir_Acc": 50.3132,
+      "R2": 0.589298,
+      "Naive_MAE": 4.977403,
+      "Improvement_Pct": -3.563
+    },
+    "CatBoost": {
+      "MAE": 5.068559,
+      "RMSE": 7.700738,
+      "MAPE": 6.6574,
+      "Dir_Acc": 48.0167,
+      "R2": 0.598637,
+      "Naive_MAE": 4.977403,
+      "Improvement_Pct": -1.8314
+    },
+    "RandomForest": {
+      "MAE": 5.513388,
+      "RMSE": 8.08896,
+      "MAPE": 7.3758,
+      "Dir_Acc": 48.4342,
+      "R2": 0.557149,
+      "Naive_MAE": 4.977403,
+      "Improvement_Pct": -10.7684
+    }
+  },
+  "gold": {
+    "XGBoost": {
+      "MAE": 146.550841,
+      "RMSE": 206.416555,
+      "MAPE": 3.7201,
+      "Dir_Acc": 64.3725,
+      "R2": 0.93049,
+      "Naive_MAE": 152.617439,
+      "Improvement_Pct": 3.975
+    },
+    "LightGBM": {
+      "MAE": 147.334599,
+      "RMSE": 205.392201,
+      "MAPE": 3.7367,
+      "Dir_Acc": 59.1093,
+      "R2": 0.931178,
+      "Naive_MAE": 152.617439,
+      "Improvement_Pct": 3.4615
+    },
+    "CatBoost": {
+      "MAE": 150.232855,
+      "RMSE": 209.16644,
+      "MAPE": 3.8076,
+      "Dir_Acc": 60.9312,
+      "R2": 0.928626,
+      "Naive_MAE": 152.617439,
+      "Improvement_Pct": 1.5625
+    },
+    "RandomForest": {
+      "MAE": 148.761036,
+      "RMSE": 208.68379,
+      "MAPE": 3.7776,
+      "Dir_Acc": 58.7045,
+      "R2": 0.928955,
+      "Naive_MAE": 152.617439,
+      "Improvement_Pct": 2.5268
+    }
+  },
+  "natural_gas": {
+    "XGBoost": {
+      "MAE": 0.391067,
+      "RMSE": 0.547103,
+      "MAPE": 11.5979,
+      "Dir_Acc": 53.3333,
+      "R2": 0.154422,
+      "Naive_MAE": 0.390296,
+      "Improvement_Pct": -0.1976
+    },
+    "LightGBM": {
+      "MAE": 0.388895,
+      "RMSE": 0.541694,
+      "MAPE": 11.5264,
+      "Dir_Acc": 57.5,
+      "R2": 0.17106,
+      "Naive_MAE": 0.390296,
+      "Improvement_Pct": 0.3589
+    },
+    "CatBoost": {
+      "MAE": 0.389285,
+      "RMSE": 0.543461,
+      "MAPE": 11.5248,
+      "Dir_Acc": 55.0,
+      "R2": 0.165643,
+      "Naive_MAE": 0.390296,
+      "Improvement_Pct": 0.2589
+    },
+    "RandomForest": {
+      "MAE": 0.389103,
+      "RMSE": 0.531911,
+      "MAPE": 11.5246,
+      "Dir_Acc": 53.125,
+      "R2": 0.200731,
+      "Naive_MAE": 0.390296,
+      "Improvement_Pct": 0.3056
+    }
+  },
+  "silver": {
+    "XGBoost": {
+      "MAE": 4.779297,
+      "RMSE": 7.88014,
+      "MAPE": 7.8969,
+      "Dir_Acc": 63.2017,
+      "R2": 0.844576,
+      "Naive_MAE": 4.839583,
+      "Improvement_Pct": 1.2457
+    },
+    "LightGBM": {
+      "MAE": 4.778706,
+      "RMSE": 7.800062,
+      "MAPE": 8.126,
+      "Dir_Acc": 63.4096,
+      "R2": 0.847719,
+      "Naive_MAE": 4.839583,
+      "Improvement_Pct": 1.2579
+    },
+    "CatBoost": {
+      "MAE": 4.747193,
+      "RMSE": 7.870444,
+      "MAPE": 7.8258,
+      "Dir_Acc": 61.7464,
+      "R2": 0.844959,
+      "Naive_MAE": 4.839583,
+      "Improvement_Pct": 1.909
+    },
+    "RandomForest": {
+      "MAE": 4.804294,
+      "RMSE": 7.9258,
+      "MAPE": 8.0009,
+      "Dir_Acc": 60.499,
+      "R2": 0.84277,
+      "Naive_MAE": 4.839583,
+      "Improvement_Pct": 0.7292
+    }
+  },
+  "wheat": {
+    "XGBoost": {
+      "MAE": 21.125872,
+      "RMSE": 27.475095,
+      "MAPE": 3.7091,
+      "Dir_Acc": 53.5417,
+      "R2": 0.584876,
+      "Naive_MAE": 21.8,
+      "Improvement_Pct": 3.0923
+    },
+    "LightGBM": {
+      "MAE": 21.323332,
+      "RMSE": 27.891631,
+      "MAPE": 3.7396,
+      "Dir_Acc": 54.1667,
+      "R2": 0.572194,
+      "Naive_MAE": 21.8,
+      "Improvement_Pct": 2.1865
+    },
+    "CatBoost": {
+      "MAE": 21.509726,
+      "RMSE": 27.69824,
+      "MAPE": 3.7822,
+      "Dir_Acc": 55.2083,
+      "R2": 0.578106,
+      "Naive_MAE": 21.8,
+      "Improvement_Pct": 1.3315
+    },
+    "RandomForest": {
+      "MAE": 20.704596,
+      "RMSE": 26.684039,
+      "MAPE": 3.629,
+      "Dir_Acc": 56.25,
+      "R2": 0.608436,
+      "Naive_MAE": 21.8,
+      "Improvement_Pct": 5.0248
+    }
+  }
+}

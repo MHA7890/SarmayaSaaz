@@ -1,0 +1,284 @@
+{
+  "copper": {
+    "LSTM": {
+      "MAE": 0.4202,
+      "RMSE": 0.493891,
+      "MAPE": 7.8681,
+      "Dir_Acc": 61.0209,
+      "R2": 0.551802,
+      "Naive_MAE": 0.455601,
+      "Improvement_Pct": 7.7702
+    },
+    "GRU": {
+      "MAE": 0.486151,
+      "RMSE": 0.588671,
+      "MAPE": 9.1251,
+      "Dir_Acc": 46.8677,
+      "R2": 0.363272,
+      "Naive_MAE": 0.455601,
+      "Improvement_Pct": -6.7056
+    },
+    "Transformer": {
+      "MAE": 0.675877,
+      "RMSE": 0.813061,
+      "MAPE": 12.4597,
+      "Dir_Acc": 39.9072,
+      "R2": -0.214659,
+      "Naive_MAE": 0.455601,
+      "Improvement_Pct": -48.3485
+    },
+    "N-BEATS": {
+      "MAE": 0.402239,
+      "RMSE": 0.468816,
+      "MAPE": 7.744,
+      "Dir_Acc": 64.0371,
+      "R2": 0.596156,
+      "Naive_MAE": 0.455601,
+      "Improvement_Pct": 11.7124
+    },
+    "TFT": {
+      "MAE": 0.475407,
+      "RMSE": 0.585319,
+      "MAPE": 8.8101,
+      "Dir_Acc": 50.8121,
+      "R2": 0.370502,
+      "Naive_MAE": 0.455601,
+      "Improvement_Pct": -4.3473
+    }
+  },
+  "crude_oil": {
+    "LSTM": {
+      "MAE": 11.925379,
+      "RMSE": 17.490048,
+      "MAPE": 15.3498,
+      "Dir_Acc": 57.6744,
+      "R2": -0.865525,
+      "Naive_MAE": 10.758467,
+      "Improvement_Pct": -10.8464
+    },
+    "GRU": {
+      "MAE": 12.734455,
+      "RMSE": 18.035158,
+      "MAPE": 16.6549,
+      "Dir_Acc": 56.7442,
+      "R2": -0.983622,
+      "Naive_MAE": 10.758467,
+      "Improvement_Pct": -18.3668
+    },
+    "Transformer": {
+      "MAE": 13.831226,
+      "RMSE": 20.349041,
+      "MAPE": 17.6488,
+      "Dir_Acc": 49.5349,
+      "R2": -1.525265,
+      "Naive_MAE": 10.758467,
+      "Improvement_Pct": -28.5613
+    },
+    "N-BEATS": {
+      "MAE": 13.330663,
+      "RMSE": 20.045363,
+      "MAPE": 17.2402,
+      "Dir_Acc": 57.2093,
+      "R2": -1.450456,
+      "Naive_MAE": 10.758467,
+      "Improvement_Pct": -23.9086
+    },
+    "TFT": {
+      "MAE": 16.208493,
+      "RMSE": 22.041022,
+      "MAPE": 22.6269,
+      "Dir_Acc": 60.0,
+      "R2": -1.962665,
+      "Naive_MAE": 10.758467,
+      "Improvement_Pct": -50.658
+    }
+  },
+  "gold": {
+    "LSTM": {
+      "MAE": 362.320318,
+      "RMSE": 468.090074,
+      "MAPE": 8.7884,
+      "Dir_Acc": 69.2308,
+      "R2": 0.597719,
+      "Naive_MAE": 412.066991,
+      "Improvement_Pct": 12.0725
+    },
+    "GRU": {
+      "MAE": 387.743848,
+      "RMSE": 488.914866,
+      "MAPE": 9.4778,
+      "Dir_Acc": 61.3122,
+      "R2": 0.561129,
+      "Naive_MAE": 412.066991,
+      "Improvement_Pct": 5.9027
+    },
+    "Transformer": {
+      "MAE": 382.724616,
+      "RMSE": 479.51613,
+      "MAPE": 9.4191,
+      "Dir_Acc": 72.3982,
+      "R2": 0.57784,
+      "Naive_MAE": 412.066991,
+      "Improvement_Pct": 7.1208
+    },
+    "N-BEATS": {
+      "MAE": 381.291163,
+      "RMSE": 487.473132,
+      "MAPE": 9.3681,
+      "Dir_Acc": 69.6833,
+      "R2": 0.563713,
+      "Naive_MAE": 412.066991,
+      "Improvement_Pct": 7.4686
+    },
+    "TFT": {
+      "MAE": 383.292325,
+      "RMSE": 483.500155,
+      "MAPE": 9.292,
+      "Dir_Acc": 65.6109,
+      "R2": 0.570796,
+      "Naive_MAE": 412.066991,
+      "Improvement_Pct": 6.983
+    }
+  },
+  "natural_gas": {
+    "LSTM": {
+      "MAE": 0.92131,
+      "RMSE": 1.079855,
+      "MAPE": 27.4253,
+      "Dir_Acc": 54.1667,
+      "R2": -2.550908,
+      "Naive_MAE": 0.73469,
+      "Improvement_Pct": -25.4012
+    },
+    "GRU": {
+      "MAE": 0.867667,
+      "RMSE": 1.012128,
+      "MAPE": 25.6147,
+      "Dir_Acc": 54.6296,
+      "R2": -2.119459,
+      "Naive_MAE": 0.73469,
+      "Improvement_Pct": -18.0997
+    },
+    "Transformer": {
+      "MAE": 0.926395,
+      "RMSE": 1.065402,
+      "MAPE": 27.4439,
+      "Dir_Acc": 50.2315,
+      "R2": -2.456495,
+      "Naive_MAE": 0.73469,
+      "Improvement_Pct": -26.0934
+    },
+    "N-BEATS": {
+      "MAE": 1.083312,
+      "RMSE": 1.247559,
+      "MAPE": 32.485,
+      "Dir_Acc": 49.537,
+      "R2": -3.73948,
+      "Naive_MAE": 0.73469,
+      "Improvement_Pct": -47.4516
+    },
+    "TFT": {
+      "MAE": 0.874952,
+      "RMSE": 1.015677,
+      "MAPE": 25.8296,
+      "Dir_Acc": 50.0,
+      "R2": -2.141373,
+      "Naive_MAE": 0.73469,
+      "Improvement_Pct": -19.0914
+    }
+  },
+  "silver": {
+    "LSTM": {
+      "MAE": 11.053039,
+      "RMSE": 16.624814,
+      "MAPE": 17.0646,
+      "Dir_Acc": 53.7037,
+      "R2": 0.314385,
+      "Naive_MAE": 10.765751,
+      "Improvement_Pct": -2.6685
+    },
+    "GRU": {
+      "MAE": 10.84288,
+      "RMSE": 16.441394,
+      "MAPE": 16.7642,
+      "Dir_Acc": 59.7222,
+      "R2": 0.329431,
+      "Naive_MAE": 10.765751,
+      "Improvement_Pct": -0.7164
+    },
+    "Transformer": {
+      "MAE": 11.19713,
+      "RMSE": 16.247773,
+      "MAPE": 17.4469,
+      "Dir_Acc": 56.0185,
+      "R2": 0.345131,
+      "Naive_MAE": 10.765751,
+      "Improvement_Pct": -4.007
+    },
+    "N-BEATS": {
+      "MAE": 10.642756,
+      "RMSE": 16.056874,
+      "MAPE": 16.3208,
+      "Dir_Acc": 62.963,
+      "R2": 0.360429,
+      "Naive_MAE": 10.765751,
+      "Improvement_Pct": 1.1425
+    },
+    "TFT": {
+      "MAE": 10.980068,
+      "RMSE": 16.379337,
+      "MAPE": 16.9888,
+      "Dir_Acc": 59.2593,
+      "R2": 0.334483,
+      "Naive_MAE": 10.765751,
+      "Improvement_Pct": -1.9907
+    }
+  },
+  "wheat": {
+    "LSTM": {
+      "MAE": 86.050162,
+      "RMSE": 100.203258,
+      "MAPE": 14.8578,
+      "Dir_Acc": 46.0465,
+      "R2": -4.077239,
+      "Naive_MAE": 31.056977,
+      "Improvement_Pct": -177.0719
+    },
+    "GRU": {
+      "MAE": 61.80119,
+      "RMSE": 75.140677,
+      "MAPE": 10.605,
+      "Dir_Acc": 54.4186,
+      "R2": -1.855053,
+      "Naive_MAE": 31.056977,
+      "Improvement_Pct": -98.9929
+    },
+    "Transformer": {
+      "MAE": 55.144901,
+      "RMSE": 69.711208,
+      "MAPE": 9.4455,
+      "Dir_Acc": 51.3953,
+      "R2": -1.457362,
+      "Naive_MAE": 31.056977,
+      "Improvement_Pct": -77.5604
+    },
+    "N-BEATS": {
+      "MAE": 51.207586,
+      "RMSE": 67.443056,
+      "MAPE": 8.7007,
+      "Dir_Acc": 48.8372,
+      "R2": -1.300056,
+      "Naive_MAE": 31.056977,
+      "Improvement_Pct": -64.8827
+    },
+    "TFT": {
+      "MAE": 61.788391,
+      "RMSE": 77.203307,
+      "MAPE": 10.5806,
+      "Dir_Acc": 49.5349,
+      "R2": -2.013948,
+      "Naive_MAE": 31.056977,
+      "Improvement_Pct": -98.9517
+    }
+  }
+}

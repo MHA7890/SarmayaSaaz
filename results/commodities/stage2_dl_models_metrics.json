@@ -1,0 +1,80 @@
+{
+    "gold": {
+        "Test_Size": 627,
+        "LSTM": {
+            "MAE": 44.1992,
+            "RMSE": 74.2012,
+            "Dir_Acc": 50.56
+        },
+        "Transformer": {
+            "MAE": 44.038,
+            "RMSE": 67.1208,
+            "Dir_Acc": 51.83
+        }
+    },
+    "silver": {
+        "Test_Size": 627,
+        "LSTM": {
+            "MAE": 1.2075,
+            "RMSE": 2.4325,
+            "Dir_Acc": 52.47
+        },
+        "Transformer": {
+            "MAE": 1.1442,
+            "RMSE": 2.3834,
+            "Dir_Acc": 50.88
+        }
+    },
+    "copper": {
+        "Test_Size": 627,
+        "LSTM": {
+            "MAE": 0.0828,
+            "RMSE": 0.1269,
+            "Dir_Acc": 52.31
+        },
+        "Transformer": {
+            "MAE": 0.0725,
+            "RMSE": 0.1091,
+            "Dir_Acc": 45.45
+        }
+    },
+    "natural_gas": {
+        "Test_Size": 627,
+        "LSTM": {
+            "MAE": 0.1242,
+            "RMSE": 0.2266,
+            "Dir_Acc": 45.93
+        },
+        "Transformer": {
+            "MAE": 0.1181,
+            "RMSE": 0.2184,
+            "Dir_Acc": 49.12
+        }
+    },
+    "crude_oil": {
+        "Test_Size": 627,
+        "LSTM": {
+            "MAE": 1.62,
+            "RMSE": 2.6533,
+            "Dir_Acc": 52.15
+        },
+        "Transformer": {
+            "MAE": 2.6398,
+            "RMSE": 4.5465,
+            "Dir_Acc": 50.72
+        }
+    },
+    "wheat": {
+        "Test_Size": 627,
+        "LSTM": {
+            "MAE": 8.0482,
+            "RMSE": 10.5497,
+            "Dir_Acc": 48.96
+        },
+        "Transformer": {
+            "MAE": 8.242,
+            "RMSE": 10.5007,
+            "Dir_Acc": 44.02
+        }
+    }
+}

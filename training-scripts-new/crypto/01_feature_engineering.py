@@ -143,7 +143,7 @@ def load_fear_greed() -> pd.Series:
     path = CRYPTO_RAW / "fear_greed_index.csv"
     if not path.exists():
         print(f"  ! {path} not found - Fear_Greed_Score will be filled with the neutral value (50)")
-        return pd.Series(dtype=float)
+        return pd.Series(name="Fear_Greed_Score", dtype=float)
     fg = pd.read_csv(path, parse_dates=["Date"]).set_index("Date")["FearGreed_Raw"].astype(float)
     fg.index = fg.index.normalize()
     return fg.rename("Fear_Greed_Score")
@@ -154,7 +154,8 @@ def fetch_sp500_return() -> pd.Series:
     sp = yf.download("^GSPC", period="10y", interval="1d", progress=False)
     if isinstance(sp.columns, pd.MultiIndex):
         sp.columns = [c[0] for c in sp.columns]
-    ret = np.log(sp["Close"] / sp["Close"].shift(7))
+    close = sp["Close"].squeeze() if isinstance(sp["Close"], pd.DataFrame) else sp["Close"]
+    ret = np.log(close / close.shift(7))
     ret.index = pd.to_datetime(ret.index).normalize()
     return ret.rename("SP500_Return_7d")
 
@@ -162,15 +163,21 @@ def fetch_sp500_return() -> pd.Series:
 def compute_btc_volatility() -> pd.Series:
     btc_path = RAW_DIR / "BTC.csv"
     btc = pd.read_csv(btc_path, index_col="Date", parse_dates=True)
-    log_ret = np.log(btc["Close"] / btc["Close"].shift(1))
+    close = btc["Close"].squeeze() if isinstance(btc["Close"], pd.DataFrame) else btc["Close"]
+    log_ret = np.log(close / close.shift(1))
     vol = log_ret.rolling(30).std() * np.sqrt(365)
     return vol.rename("BTC_Volatility_30d")
 
 
 def apply_macro(df: pd.DataFrame, fear_greed: pd.Series, sp500: pd.Series, btc_vol: pd.Series) -> pd.DataFrame:
-    df = df.join(fear_greed, how="left")
-    df = df.join(sp500, how="left")
-    df = df.join(btc_vol, how="left")
+    if fear_greed is not None and len(fear_greed) > 0:
+        df = df.join(fear_greed, how="left")
+    else:
+        df["Fear_Greed_Score"] = 50.0
+    if sp500 is not None and len(sp500) > 0:
+        df = df.join(sp500, how="left")
+    if btc_vol is not None and len(btc_vol) > 0:
+        df = df.join(btc_vol, how="left")
     df["SP500_Return_7d"] = df["SP500_Return_7d"].ffill()
     df["BTC_Volatility_30d"] = df["BTC_Volatility_30d"].ffill()
     df["Fear_Greed_Score"] = df["Fear_Greed_Score"].fillna(50.0)

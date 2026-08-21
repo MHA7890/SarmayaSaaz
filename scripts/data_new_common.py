@@ -28,13 +28,76 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-def clean_ohlcv(df: pd.DataFrame, *, return_threshold: float, price_cols=("Open", "High", "Low", "Close")) -> tuple[pd.DataFrame, int]:
+def adjust_splits(
+    df: pd.DataFrame,
+    *,
+    price_cols: tuple[str, ...] = ("Close", "NAV"),
+    min_drop_ratio: float = 0.65,
+    min_jump_ratio: float = 1.50,
+) -> pd.DataFrame:
+    """
+    Detects unadjusted corporate actions (stock splits, bonus shares, reverse splits)
+    and retroactively adjusts past prices so that historical charts and features are smooth.
+    """
+    col = next((c for c in price_cols if c in df.columns), None)
+    if col is None or df.empty or len(df) < 10:
+        return df
+
+    df = df.copy()
+    changed = True
+    while changed:
+        changed = False
+        prices = df[col].values
+        n = len(prices)
+        for i in range(1, n):
+            p_prev = prices[i - 1]
+            p_curr = prices[i]
+            if p_prev <= 0 or p_curr <= 0 or np.isnan(p_prev) or np.isnan(p_curr):
+                continue
+
+            ratio = p_curr / p_prev
+
+            # Stock split / bonus shares (e.g. 5-for-1 split drops price by ~80%, ratio <= 0.65)
+            if ratio <= min_drop_ratio:
+                future = prices[i : min(i + 10, n)]
+                if len(future) >= 3 and np.mean(future) < p_prev * 0.75:
+                    for c in ["Open", "High", "Low", "Close", "NAV"]:
+                        if c in df.columns:
+                            df.iloc[:i, df.columns.get_loc(c)] *= ratio
+                    if "Volume" in df.columns:
+                        df.iloc[:i, df.columns.get_loc("Volume")] /= ratio
+                    changed = True
+                    break
+
+            # Reverse split (e.g. 1-for-2 reverse split doubles price, ratio >= 1.50)
+            elif ratio >= min_jump_ratio:
+                future = prices[i : min(i + 10, n)]
+                if len(future) >= 3 and np.mean(future) > p_prev * 1.35:
+                    for c in ["Open", "High", "Low", "Close", "NAV"]:
+                        if c in df.columns:
+                            df.iloc[:i, df.columns.get_loc(c)] *= ratio
+                    if "Volume" in df.columns:
+                        df.iloc[:i, df.columns.get_loc("Volume")] /= ratio
+                    changed = True
+                    break
+
+    return df
+
+
+def clean_ohlcv(
+    df: pd.DataFrame,
+    *,
+    return_threshold: float,
+    price_cols=("Open", "High", "Low", "Close"),
+    adjust_stock_splits: bool = False,
+) -> tuple[pd.DataFrame, int]:
     """Null removal + outlier removal for an OHLC(V) frame indexed by date.
 
     - drops rows with any null in the price columns (or Volume, if present)
     - drops rows with non-positive prices
     - drops rows that violate basic OHLC consistency (High is not the max,
       Low is not the min)
+    - optionally retroactively adjusts corporate action splits/bonus shares
     - drops rows whose single-day Close-to-Close return exceeds
       `return_threshold` in magnitude (data glitches / bad prints), which is
       a source-specific tolerance since PSX has circuit breakers and crypto
@@ -50,23 +113,10 @@ def clean_ohlcv(df: pd.DataFrame, *, return_threshold: float, price_cols=("Open"
     for c in [c for c in price_cols if c in df.columns]:
         df = df[df[c] > 0]
 
+    if adjust_stock_splits:
+        df = adjust_splits(df, price_cols=price_cols)
+
     if all(c in df.columns for c in ("High", "Low", "Open", "Close")):
-        # OHLC consistency. A bar whose High is below max(Open, Close), or Low
-        # above min(Open, Close), is self-contradictory and normally dropped.
-        #
-        # But two different things produce that shape. PSX publishes genuine
-        # tick-rounding artifacts on thin days - IBFL 2026-08-19 closed at
-        # 265.03 with a Low of 265.05, over by 0.02, which is 0.008% of the
-        # close on 43 shares traded. It also publishes genuinely broken prints:
-        # across IBFL's history the violations run to 104% of the close.
-        # Dropping the whole session treats both the same and silently loses a
-        # real trading day, which is how one ticker ends up stuck a day behind
-        # the rest of the market.
-        #
-        # So: violations within OHLC_CLAMP_TOLERANCE of the close are clamped -
-        # High/Low widened to contain Open and Close, which preserves the close
-        # and makes the bar consistent - and anything larger is still dropped.
-        # For IBFL that admits the 12 rounding rows and rejects the other 214.
         row_max = df[["Open", "Close"]].max(axis=1)
         row_min = df[["Open", "Close"]].min(axis=1)
 
@@ -93,12 +143,20 @@ def clean_ohlcv(df: pd.DataFrame, *, return_threshold: float, price_cols=("Open"
     return df, removed
 
 
-def clean_price_series(df: pd.DataFrame, price_col: str, *, return_threshold: float) -> tuple[pd.DataFrame, int]:
+def clean_price_series(
+    df: pd.DataFrame,
+    price_col: str,
+    *,
+    return_threshold: float,
+    adjust_stock_splits: bool = False,
+) -> tuple[pd.DataFrame, int]:
     """Null/outlier removal for a single-price series (e.g. mutual fund NAV)."""
     before = len(df)
     df = df.dropna(subset=[price_col])
     df = df[df[price_col] > 0]
     df = df.sort_index()
+    if adjust_stock_splits:
+        df = adjust_splits(df, price_cols=(price_col,))
     ret = df[price_col].pct_change()
     df = df[(ret.abs() <= return_threshold) | ret.isna()]
     removed = before - len(df)

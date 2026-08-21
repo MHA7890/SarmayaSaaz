@@ -127,7 +127,7 @@ def run():
                 continue
 
             df = df[~df.index.duplicated(keep="last")]
-            df, removed = clean_ohlcv(df, return_threshold=RETURN_THRESHOLD)
+            df, removed = clean_ohlcv(df, return_threshold=RETURN_THRESHOLD, adjust_stock_splits=True)
             df = clip_last_n_years(df, YEARS)
             # PSX dates are local trading dates; the feed includes the running
             # session while the market is open. See drop_unclosed_sessions.

@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 from backend.config import settings
 from backend.engines import AssetNotFound, EngineError, engines
 from backend.routers import assets, forecasts, market, models, system
+from backend.services.auto_update import ensure_fresh_data_on_startup
 from backend.services.snapshot import snapshot
 
 logging.basicConfig(
@@ -32,6 +33,12 @@ logger = logging.getLogger("sarmayasaaz")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting %s v%s", settings.app_name, settings.version)
+    
+    try:
+        ensure_fresh_data_on_startup()
+    except Exception as e:
+        logger.error("Error during startup data freshness check: %s", e)
+
     engines.load_all()
 
     online = len(engines.online)

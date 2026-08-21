@@ -82,3 +82,29 @@ async def reload_data() -> dict:
         "snapshot_reloaded": reloaded,
         "snapshot": snapshot.meta(),
     }
+
+
+@router.get("/data/freshness")
+async def data_freshness() -> dict:
+    """Check dataset freshness across all asset classes against expected market closed date."""
+    from backend.services.auto_update import check_data_freshness
+    return check_data_freshness()
+
+
+@router.post("/data/sync")
+async def sync_data(background: BackgroundTasks) -> dict:
+    """
+    Check dataset freshness and trigger data procurement if stale.
+    """
+    from backend.services.auto_update import check_data_freshness, procure_fresh_data
+    freshness = check_data_freshness()
+    stale = [ac for ac, info in freshness.items() if info["is_stale"]]
+    if not stale:
+        return {"status": "ok", "detail": "Data is already up to date", "freshness": freshness}
+    
+    background.add_task(procure_fresh_data, stale)
+    return {
+        "status": "accepted",
+        "detail": f"Procurement started for stale asset classes: {stale}",
+        "freshness": freshness,
+    }

@@ -67,6 +67,11 @@ class Settings(BaseSettings):
 
     horizons: tuple[int, ...] = (7, 14, 28, 42, 60, 90, 120)
 
+    # --- Automated startup procurement ---
+    # When True, backend verifies dataset freshness at startup and automatically
+    # re-fetches latest market closes if data on disk is stale.
+    auto_procure_on_startup: bool = True
+
     # --- Live market data ---
     # When True, single-asset forecasts try a live yfinance quote before
     # falling back to the stored dataset's last row. Left False: yfinance

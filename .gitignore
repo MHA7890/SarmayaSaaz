@@ -38,5 +38,13 @@ _backup_v1/
 models/commodities/models_champion_backup/
 models/crypto_champion_backup/
 
-# --- CatBoost auto-generated training cache ---
+# --- PyInstaller temporary build directories ---
+build/
+dist/
+*.spec
+
+# --- CatBoost temporary training logs ---
+catboost_info/
+catboostinfo/
+
 catboost_info/

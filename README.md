@@ -42,7 +42,21 @@ unified API, one dashboard.
 
 ## Running it
 
-Two processes, both from the repo root.
+### Option 1: 1-Click Control Center (Recommended)
+
+Run the standalone launcher directly from the repository root:
+- **Windows Executable**: Double-click **`SarmayaSaaz_Launcher.exe`** or **`SarmayaSaaz.bat`**.
+- **Universal Python**: Run `python SarmayaSaaz_Launcher.pyw` (works on Windows, macOS, and Linux).
+
+The Control Center GUI provides:
+- **▶ Start Platform**: Launches Backend API (`:8000`) and Next.js Frontend (`:3000`) in background worker threads.
+- **■ Stop Platform**: Safely terminates all platform services cleanly.
+- **🌐 Launch Website**: Opens `http://localhost:3000` directly in your default web browser.
+- **⚙ Install Dependencies**: Performs a smart pre-check and automatically installs Python (`uv sync`) and Node.js (`npm install`) dependencies if missing.
+
+### Option 2: Manual Terminal Startup
+
+Two processes, both started from the repo root:
 
 ```bash
 # 1. Backend — http://127.0.0.1:8000  (interactive docs at /docs)
@@ -56,7 +70,7 @@ npm run dev
 ```
 
 The first backend start takes ~30 s: it deserializes four engine registries and
-reads a 94 MB MUFAP export to build the NAV lookup. The Next.js dev server
+reads the MUFAP export to build the NAV lookup. The Next.js dev server
 proxies `/api/*` to the backend automatically via `next.config.mjs`.
 
 ### Build the forecast snapshot
@@ -177,13 +191,10 @@ training-scripts-new/    retrained pipelines (produce artifacts in models-new/)
   psx/                   01_feature_engineering.py, 02_train_all.py
   mufap/                 01_feature_engineering.py, 02_train_all.py
 
-data/                    original datasets (legacy, still used for raw price history)
 data-new/                freshly re-collected OHLCV / NAV (display + chart source)
 data-ready/              engineered feature frames built from data-new/ (model inputs)
 models/                  production model artifacts (~2031 files)
-models-new/              retrained artifacts (swapped into models/ on promotion)
 results/                 metrics, ensemble weights, cluster maps, snapshot
-results-new/             metrics from retrained runs
 tests/                   end-to-end API tests against real artifacts (23 tests)
 docs/                    automation guide, metrics, horizons, sentiment plans, future works
 ```
@@ -275,6 +286,8 @@ told it.
 
 These are real defects found in the artifacts and datasets. The code works around
 them explicitly rather than silently.
+
+**Automated Stock Split & Corporate Action Adjustment.** Raw exchange feeds (e.g. PSX DPS) publish unadjusted traded prices, creating artificial single-day price drops during stock splits or bonus share distributions (such as Systems Limited's 5-for-1 bonus split in June 2025). The data pipeline automatically detects corporate action price steps (`adjust_splits` in `scripts/data_new_common.py`) and retroactively adjusts past prices and volumes so historical charts and features remain continuous.
 
 **Mixed feature contracts (commodities).** 154 artifacts expect exactly 9 fewer
 features than their scaler emits — the sentiment block — a residue of the

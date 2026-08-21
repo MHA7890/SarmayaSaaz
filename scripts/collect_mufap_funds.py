@@ -170,7 +170,7 @@ def run():
                     failed.append(f"{name} [{fund_id}]")
                     continue
 
-                df, removed = clean_price_series(df, "NAV", return_threshold=RETURN_THRESHOLD)
+                df, removed = clean_price_series(df, "NAV", return_threshold=RETURN_THRESHOLD, adjust_stock_splits=True)
                 df = clip_last_n_years(df, YEARS)
                 # Funds publish today's NAV at staggered times; excluding the
                 # current day keeps the universe on one consistent date.

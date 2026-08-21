@@ -117,7 +117,7 @@ def macro_proxy(ticker: str, prefix: str, start: str, end: str) -> pd.DataFrame:
     raw = yf.download(ticker, start=start, end=end, progress=False)
     if isinstance(raw.columns, pd.MultiIndex):
         raw.columns = [c[0] for c in raw.columns]
-    close = raw["Close"]
+    close = raw["Close"].squeeze() if isinstance(raw["Close"], pd.DataFrame) else raw["Close"]
     out = pd.DataFrame(index=raw.index)
     out[f"{prefix}_Log_Return"] = np.log(close / close.shift(1))
     out[f"{prefix}_SMA_200_Ratio"] = close / ta.trend.sma_indicator(close, window=200)

@@ -33,3 +33,10 @@ Thumbs.db
 
 # --- Pre-swap production artifact backup (v1 models), 365MB ---
 _backup_v1/
+
+# --- Champion-model rollback snapshots (kept on disk, not in repo) ---
+models/commodities/models_champion_backup/
+models/crypto_champion_backup/
+
+# --- CatBoost auto-generated training cache ---
+catboost_info/

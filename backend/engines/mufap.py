@@ -59,6 +59,12 @@ def classify(category: str) -> str:
     return "Balanced"
 
 
+EXCLUDED_FUNDS = {
+    "UBL Retirement Saving Fund (VPS-Commodities  Gold)",
+    "UBL Retirement Saving Fund (VPS-Commodities Gold)",
+}
+
+
 class MUFAPEngine(RoutedEngine):
     asset_class = AssetClass.MUTUAL_FUND
     name = "MUFAP"
@@ -79,6 +85,42 @@ class MUFAPEngine(RoutedEngine):
         logger.info("MUFAP engine ready: %d funds", len(self._file_for))
 
     # -- reference data ---------------------------------------------------
+    def _index_datasets(self) -> None:
+        empty, unnamed = 0, 0
+        root = settings.data_ready_dir / "mufap"
+        for cluster in _clusters(root):
+            directory = root / cluster
+            if not directory.exists():
+                continue
+            for path in directory.glob("*.csv"):
+                if path.stem in EXCLUDED_FUNDS or "VPS-Commodities" in path.stem:
+                    continue
+
+                try:
+                    with open(path, encoding="utf-8") as fh:
+                        header = fh.readline()
+                        first_row = fh.readline()
+                except OSError:
+                    continue
+
+                if not header or not first_row.strip():
+                    empty += 1
+                    continue
+
+                date_col = header.split(",")[0].strip()
+                if not date_col:
+                    date_col = "__index__"
+                    unnamed += 1
+
+                self._file_for[path.stem] = (cluster, path.name)
+                self._date_col[path.stem] = date_col
+
+        if empty or unnamed:
+            logger.warning(
+                "MUFAP datasets: %d empty (excluded), %d with an unnamed date column "
+                "(recovered positionally)", empty, unnamed,
+            )
+
     def _load_reference(self) -> None:
         """Build fund -> (category, latest NAV) from the raw export."""
         raw = settings.data_dir / "mufap" / "raw" / "MUFAP_Historical_NAV.csv"
@@ -106,47 +148,6 @@ class MUFAPEngine(RoutedEngine):
                 logger.warning("Could not read MUFAP raw export: %s", e)
         else:
             logger.warning("MUFAP raw export not found at %s", raw)
-
-        # Discover which funds are servable, and screen out datasets that are
-        # not.
-        #
-        # The pre-swap export under data/mufap_clustered/ carried two defects -
-        # 20 files with a header and zero rows, and 11 that lost their date
-        # column's name in a to_csv round trip. data-ready/ has neither, but
-        # the screen stays: it is two lines of I/O per file, and it is the
-        # difference between a startup warning and a 503 on someone's first
-        # click if a future regeneration reintroduces them.
-        empty, unnamed = 0, 0
-        root = settings.data_ready_dir / "mufap"
-        for cluster in _clusters(root):
-            directory = root / cluster
-            if not directory.exists():
-                continue
-            for path in directory.glob("*.csv"):
-                try:
-                    with open(path, encoding="utf-8") as fh:
-                        header = fh.readline()
-                        first_row = fh.readline()
-                except OSError:
-                    continue
-
-                if not header or not first_row.strip():
-                    empty += 1
-                    continue
-
-                date_col = header.split(",")[0].strip()
-                if not date_col:
-                    date_col = "__index__"
-                    unnamed += 1
-
-                self._file_for[path.stem] = (cluster, path.name)
-                self._date_col[path.stem] = date_col
-
-        if empty or unnamed:
-            logger.warning(
-                "MUFAP datasets: %d empty (excluded), %d with an unnamed date column "
-                "(recovered positionally)", empty, unnamed,
-            )
 
     def _drop_navless(self) -> None:
         """Remove funds with a feature frame but no NAV anywhere.

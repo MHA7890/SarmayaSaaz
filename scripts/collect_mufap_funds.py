@@ -88,25 +88,34 @@ def discover_fund_ids(retries: int = 3) -> dict[str, list[str]]:
     """
     Map fund name -> FundID(s) from the MUFAP directory.
     """
-    resp = None
-    last_err: Exception | None = None
+    fallback_file = Path(__file__).parent / "mufap_fund_ids.json"
+    mapping: dict[str, list[str]] = {}
+
     for attempt in range(1, retries + 1):
         try:
             resp = requests.get(DIRECTORY_URL, headers=HEADERS, timeout=15)
             resp.raise_for_status()
-            break
+            for raw_name, fund_id in CARD_RE.findall(resp.text):
+                name = html.unescape(re.sub(r"\s+", " ", raw_name)).strip()
+                mapping.setdefault(name, []).append(fund_id)
+            if mapping:
+                return mapping
         except Exception as e:  # noqa: BLE001 - any transport error is retryable
-            last_err = e
             if attempt < retries:
                 logger.warning(f"Fund directory attempt {attempt}/{retries} failed ({type(e).__name__}); retrying")
                 time.sleep(1.0 * attempt)
-    if resp is None:
-        raise RuntimeError(f"fund directory unreachable after {retries} attempts: {last_err}")
-    mapping: dict[str, list[str]] = {}
-    for raw_name, fund_id in CARD_RE.findall(resp.text):
-        name = html.unescape(re.sub(r"\s+", " ", raw_name)).strip()
-        mapping.setdefault(name, []).append(fund_id)
+
+    if fallback_file.exists():
+        logger.info("Using cached fund IDs from scripts/mufap_fund_ids.json")
+        try:
+            cached = json.loads(fallback_file.read_text(encoding="utf-8"))
+            if isinstance(cached, dict) and cached:
+                return cached
+        except Exception as e:
+            logger.warning("Could not read cached fund IDs: %s", e)
+
     return mapping
+
 
 
 def fetch_fund_history(fund_id: str, retries: int = 2) -> tuple[str, pd.DataFrame]:

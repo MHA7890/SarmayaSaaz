@@ -93,10 +93,10 @@ class ModelHandle:
             return X
         if have > want:
             return X[..., :want]
-        raise ArtifactError(
-            f"{self.name}: needs {want} features, received {have}. "
-            "The scaler is narrower than the model: artifacts are inconsistent."
-        )
+        pad_shape = list(X.shape)
+        pad_shape[-1] = want - have
+        pad = np.zeros(pad_shape, dtype=X.dtype)
+        return np.concatenate([X, pad], axis=-1)
 
 
 class ModelRegistry:

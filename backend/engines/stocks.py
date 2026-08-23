@@ -218,7 +218,7 @@ class StocksEngine(RoutedEngine):
             X_raw = np.nan_to_num(X_raw, nan=0.0, posinf=0.0, neginf=0.0)
 
         scaler = self._scaler(sector)
-        X_scaled = scaler.transform(X_raw)
+        X_scaled = self._scale(scaler, X_raw)
 
         warnings_out: list[str] = []
         horizons = self._forecast_horizons(

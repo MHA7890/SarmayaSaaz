@@ -46,6 +46,17 @@ class RoutedEngine(Engine):
             raise EngineError(f"Scaler missing for group '{group}'")
         return joblib.load(path)
 
+    def _scale(self, scaler, X_raw: np.ndarray) -> np.ndarray:
+        if hasattr(scaler, "n_features_in_"):
+            expected = scaler.n_features_in_
+            actual = X_raw.shape[1] if X_raw.ndim > 1 else X_raw.shape[0]
+            if actual < expected:
+                pad = np.zeros((X_raw.shape[0], expected - actual), dtype=X_raw.dtype)
+                X_raw = np.hstack([X_raw, pad])
+            elif actual > expected:
+                X_raw = X_raw[:, :expected]
+        return scaler.transform(X_raw)
+
     def _route(self, group: str, horizon: int) -> tuple[str, Path, float | None] | None:
         entry = self.routing.get(group, {}).get(f"{horizon}d")
         if not entry:

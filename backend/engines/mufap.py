@@ -334,7 +334,7 @@ class MUFAPEngine(RoutedEngine):
 
         X_raw, _cols = self._feature_matrix(df)
         scaler = self._scaler(cluster)
-        X_scaled = scaler.transform(X_raw)
+        X_scaled = self._scale(scaler, X_raw)
 
         warnings_out: list[str] = []
         horizons = self._forecast_horizons(

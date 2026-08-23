@@ -16,21 +16,22 @@ import {
   relativeDate,
 } from "@/lib/format";
 
-/** Headline price, 24h move, action and data freshness. */
 export function AssetHeader({ forecast }: { forecast: Forecast }) {
   return (
-    <div className="card flex flex-wrap items-center justify-between gap-4 p-5">
-      <div>
-        <div className="flex flex-wrap items-baseline gap-2.5">
-          <h1 className="text-xl font-bold">{forecast.name}</h1>
+    <div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-bold tracking-tight text-fg max-w-full break-words">
+            {forecast.name}
+          </h1>
           {forecast.asset_class !== "commodity" && (
-            <span className="num rounded border border-line px-1.5 py-0.5 text-[11px] text-dim">
+            <span className="num shrink-0 rounded border border-line px-1.5 py-0.5 text-[11px] text-dim">
               {formatTicker(forecast.ticker)}
             </span>
           )}
-          <span className="label">{formatGroup(forecast.group)}</span>
+          <span className="label shrink-0">{formatGroup(forecast.group)}</span>
         </div>
-        <div className="mt-2 flex flex-wrap items-baseline gap-3">
+        <div className="flex flex-wrap items-baseline gap-3">
           <span className="num text-3xl font-bold">
             {formatPrice(forecast.current_price, forecast.currency, forecast.asset_class)}
           </span>
@@ -49,7 +50,7 @@ export function AssetHeader({ forecast }: { forecast: Forecast }) {
         </div>
       </div>
 
-      <div className="flex flex-col items-end gap-2">
+      <div className="flex shrink-0 flex-col items-start sm:items-end gap-2 border-t border-line pt-3 sm:border-t-0 sm:pt-0">
         <div className="flex items-center gap-2">
           {forecast.price_source === "live" && (
             <span className="rounded-full border border-pos/40 bg-pos/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-pos">
@@ -65,8 +66,8 @@ export function AssetHeader({ forecast }: { forecast: Forecast }) {
             {forecast.action}
           </span>
         </div>
-        <span className="text-[11px] text-dim">
-          Data as of {forecast.as_of} ({relativeDate(forecast.as_of)})
+        <span className="text-[11px] text-dim whitespace-nowrap">
+          Data as of {forecast.as_of} ({relativeDate(forecast.as_of, forecast.asset_class)})
         </span>
         {forecast.source_url && (
           <a
@@ -82,6 +83,7 @@ export function AssetHeader({ forecast }: { forecast: Forecast }) {
     </div>
   );
 }
+
 
 /** Full multi-horizon table with real bounds, or an explicit gap where none exist. */
 export function HorizonMatrix({ forecast }: { forecast: Forecast }) {

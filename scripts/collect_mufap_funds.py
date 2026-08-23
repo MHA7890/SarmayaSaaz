@@ -71,10 +71,17 @@ CARD_RE = re.compile(r'card-title">([^<]*)<[\s\S]{0,4000}?FundID=(\d+)')
 
 
 def target_fund_names() -> list[str]:
-    """Fund universe = every fund currently tracked under data/mufap/."""
-    existing_dir = DATA_NEW.parent / "data" / "mufap"
-    names = [p.stem for p in existing_dir.glob("*.csv")]
-    return sorted(set(names))
+    """Fund universe = all existing funds in data-new/mufap-data or all discovered in MUFAP."""
+    if OUT_DIR.exists():
+        names = []
+        for p in OUT_DIR.glob("*.csv"):
+            stem = p.stem
+            clean = re.sub(r"\s*\([^)]*\)", "", stem).strip()
+            names.append(clean)
+        if names:
+            return sorted(set(names))
+    return []
+
 
 
 def discover_fund_ids(retries: int = 3) -> dict[str, list[str]]:
@@ -162,17 +169,8 @@ def run():
 
         for fund_id in fund_ids:
             try:
-                # Resolve category placeholder first for file lookup if known, else default to check
-                temp_label = name
-                out_path = OUT_DIR / f"{safe_filename(temp_label)}.csv"
-                existing = read_existing_csv(out_path)
-
-                if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
-                    logger.info(f"  -> '{name}': already up to date ({existing.index.max().date()})")
-                    ok.append(name)
-                    continue
-
                 category, new_df = fetch_fund_history(fund_id)
+
                 label = f"{name} ({category})" if len(fund_ids) > 1 and category else name
                 out_path = OUT_DIR / f"{safe_filename(label)}.csv"
                 existing = read_existing_csv(out_path)

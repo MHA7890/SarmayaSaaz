@@ -123,14 +123,35 @@ def load_macro(name: str) -> pd.DataFrame | None:
     return macro
 
 
-def apply_macro(df: pd.DataFrame, macro: pd.DataFrame | None) -> pd.DataFrame:
-    if macro is None or macro.empty:
+def apply_macro(df: pd.DataFrame, macro: pd.DataFrame | None, out_path: Path | None = None) -> pd.DataFrame:
+    if macro is not None and not macro.empty:
+        macro_cols = list(macro.columns)
+        df = df.join(macro, how="left")
+        df[macro_cols] = df[macro_cols].ffill()
+        df = df.dropna(subset=macro_cols)  # no backfill - avoids look-ahead bias, matches original
         return df
-    macro_cols = list(macro.columns)
-    df = df.join(macro, how="left")
-    df[macro_cols] = df[macro_cols].ffill()
-    df = df.dropna(subset=macro_cols)  # no backfill - avoids look-ahead bias, matches original
+
+    if out_path and out_path.exists():
+        try:
+            sentiment_cols = {
+                "News_Volume", "Daily_Bullish", "Daily_Bearish", "Daily_NSS",
+                "Sentiment_EMA_7d", "Sentiment_Spike", "Sentiment_EMA_30d",
+                "Sentiment_EMA_60d", "Sentiment_x_Trend"
+            }
+            existing = pd.read_csv(out_path, index_col="Date", parse_dates=True)
+            non_feature = {"Open", "High", "Low", "Close", "Volume"} | {c for c in existing.columns if c.startswith("Target_")}
+            existing_feats = [c for c in existing.columns if c not in non_feature]
+            missing_cols = [c for c in existing_feats if c not in df.columns and c not in sentiment_cols]
+            if missing_cols:
+                macro_sub = existing[missing_cols]
+                df = df.join(macro_sub, how="left")
+                df[missing_cols] = df[missing_cols].ffill().bfill()
+        except Exception:
+            pass
+
     return df
+
+
 
 
 # --------------------------------------------------------------------------
@@ -213,8 +234,10 @@ def run():
             df = pd.read_csv(RAW_DIR / f"{name}.csv", index_col="Date", parse_dates=True).sort_index()
             df = technical_features(df)
 
+            out_path = OUT_DIR / f"{name}.csv"
             macro = load_macro(name)
-            df = apply_macro(df, macro)
+            df = apply_macro(df, macro, out_path=out_path)
+
 
             news = load_scored_news(name)
             df = apply_sentiment(df, news)

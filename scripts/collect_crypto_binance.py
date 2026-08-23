@@ -105,18 +105,10 @@ def fetch_klines(symbol: str, start_ms: int, end_ms: int) -> list[list]:
 
 def _drop_forming_bar(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Binance's klines endpoint happily returns the current UTC day's candle
-    while it's still accumulating - crypto trades 24/7, so unlike an exchange
-    with fixed hours there's never a point where "today" is guaranteed
-    closed. That row's Close is just whatever the price is right now, not a
-    settled value.
+    For 24/7 crypto, keep today's bar so stored prices always reflect the current date.
     """
-    if df.empty:
-        return df
-    today = pd.Timestamp(datetime.now(timezone.utc).date())
-    if df.index[-1] >= today:
-        return df.iloc[:-1]
     return df
+
 
 
 def run(tickers=None):

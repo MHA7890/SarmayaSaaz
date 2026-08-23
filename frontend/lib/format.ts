@@ -83,18 +83,23 @@ export function actionClass(action: string): string {
   }
 }
 
-export function relativeDate(iso: string | null | undefined): string {
+export function relativeDate(iso: string | null | undefined, assetClass?: string): string {
   if (!iso) return "unknown";
   const then = new Date(iso);
   if (Number.isNaN(then.getTime())) return iso;
 
-  const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
+  const now = new Date();
+  const days = Math.floor((now.getTime() - then.getTime()) / 86_400_000);
   if (days <= 0) return "today";
   if (days === 1) return "yesterday";
+  if (days === 2 && (now.getDay() === 0 || now.getDay() === 6) && assetClass !== "crypto") {
+    return "Fri close";
+  }
   if (days < 30) return `${days} days ago`;
   const months = Math.floor(days / 30);
   return months === 1 ? "1 month ago" : `${months} months ago`;
 }
+
 
 export function horizonLabel(days: number): string {
   return `${days}D`;

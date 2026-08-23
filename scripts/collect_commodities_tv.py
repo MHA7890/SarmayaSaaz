@@ -14,13 +14,17 @@ from __future__ import annotations
 import json
 import random
 import string
+import sys
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pandas as pd
 import websocket
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_new_common import (
+
     DATA_NEW,
     clean_ohlcv,
     clip_last_n_years,

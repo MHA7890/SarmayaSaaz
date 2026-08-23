@@ -10,12 +10,16 @@ Output: data-new/psx-data/<TICKER>.csv
 from __future__ import annotations
 
 import re
+import sys
 import time
+from pathlib import Path
 
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_new_common import (
+
     DATA_NEW,
     clean_ohlcv,
     clip_last_n_years,

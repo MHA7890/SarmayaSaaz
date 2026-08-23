@@ -7,12 +7,15 @@ Output: data-new/crypto-data/<TICKER>.csv
 """
 from __future__ import annotations
 
+import sys
 import time
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_new_common import (
     DATA_NEW,
     clean_ohlcv,
@@ -22,6 +25,7 @@ from data_new_common import (
     read_existing_csv,
     trim_tail,
 )
+from tradingview_fetch import fetch_bars as fetch_tv_bars
 
 logger = get_logger("collect_crypto")
 
@@ -33,6 +37,7 @@ TICKERS = [
     "LINK", "AAVE", "UNI", "CRV", "LDO", "PENDLE", "SNX",
     "TAO", "FET", "RNDR", "FIL", "GRT", "INJ", "IMX",
     "PEPE", "WIF",
+
 ]
 
 # Binance renamed/relisted a few of these since the tickers were curated.
@@ -56,7 +61,12 @@ def _get_with_retry(url: str, params: dict, retries: int = 4):
             resp = requests.get(url, params=params, timeout=20)
             if resp.status_code != 200:
                 raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:200]}")
-            return resp
+            data = resp.json()
+            if isinstance(data, dict) and "code" in data and data.get("code") != 0:
+                raise RuntimeError(f"Binance API error: {data.get('msg')}")
+            if isinstance(data, dict) and "msg" in data:
+                raise RuntimeError(f"Binance API error: {data.get('msg')}")
+            return data
         except Exception as e:
             last_err = e
             time.sleep(1.5 * (attempt + 1))
@@ -67,7 +77,7 @@ def fetch_klines(symbol: str, start_ms: int, end_ms: int) -> list[list]:
     out = []
     cursor = start_ms
     while cursor < end_ms:
-        resp = _get_with_retry(
+        batch = _get_with_retry(
             KLINES_URL,
             {
                 "symbol": symbol,
@@ -77,7 +87,6 @@ def fetch_klines(symbol: str, start_ms: int, end_ms: int) -> list[list]:
                 "limit": 1000,
             },
         )
-        batch = resp.json()
         if not batch:
             break
         out.extend(batch)
@@ -129,23 +138,29 @@ def run(tickers=None):
             else:
                 fetch_start_ms = default_start_ms
 
-            klines = fetch_klines(symbol, fetch_start_ms, end_ms)
-            if not klines and trimmed.empty:
+            new_df = pd.DataFrame()
+            try:
+                klines = fetch_klines(symbol, fetch_start_ms, end_ms)
+                if klines:
+                    df_k = pd.DataFrame(klines, columns=[
+                        "OpenTime", "Open", "High", "Low", "Close", "Volume",
+                        "CloseTime", "QuoteVolume", "Trades", "TakerBaseVol", "TakerQuoteVol", "Ignore",
+                    ])
+                    df_k["Date"] = pd.to_datetime(df_k["OpenTime"], unit="ms").dt.normalize()
+                    for c in ["Open", "High", "Low", "Close", "Volume"]:
+                        df_k[c] = pd.to_numeric(df_k[c], errors="coerce")
+                    new_df = df_k[["Date", "Open", "High", "Low", "Close", "Volume"]].set_index("Date")
+                    new_df = new_df[~new_df.index.duplicated(keep="last")].sort_index()
+            except Exception as binance_err:
+                logger.warning(f"  -> Binance API failed for {ticker} ({binance_err}); trying TradingView fallback...")
+                tv_symbol = f"BINANCE:{symbol}"
+                n_bars = 100 if not trimmed.empty else 6000
+                new_df = fetch_tv_bars(tv_symbol, n_bars=n_bars)
+
+            if new_df.empty and trimmed.empty:
                 logger.warning(f"  -> No data returned for {symbol}")
                 failed.append(ticker)
                 continue
-
-            new_df = pd.DataFrame()
-            if klines:
-                df_k = pd.DataFrame(klines, columns=[
-                    "OpenTime", "Open", "High", "Low", "Close", "Volume",
-                    "CloseTime", "QuoteVolume", "Trades", "TakerBaseVol", "TakerQuoteVol", "Ignore",
-                ])
-                df_k["Date"] = pd.to_datetime(df_k["OpenTime"], unit="ms").dt.normalize()
-                for c in ["Open", "High", "Low", "Close", "Volume"]:
-                    df_k[c] = pd.to_numeric(df_k[c], errors="coerce")
-                new_df = df_k[["Date", "Open", "High", "Low", "Close", "Volume"]].set_index("Date")
-                new_df = new_df[~new_df.index.duplicated(keep="last")].sort_index()
 
             merged = merge_incremental(trimmed, new_df)
             df, removed = clean_ohlcv(merged, return_threshold=RETURN_THRESHOLD)
@@ -170,6 +185,7 @@ def run(tickers=None):
     if failed:
         logger.warning(f"Failed tickers: {failed}")
     return len(failed)
+
 
 
 

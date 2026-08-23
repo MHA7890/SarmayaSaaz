@@ -22,12 +22,16 @@ from __future__ import annotations
 import html
 import json
 import re
+import sys
 import time
+from pathlib import Path
 
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_new_common import (
+
     DATA_NEW,
     clean_price_series,
     clip_last_n_years,

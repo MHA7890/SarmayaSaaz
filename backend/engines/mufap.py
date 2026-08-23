@@ -55,11 +55,7 @@ def classify(category: str) -> str:
     if any(k in c for k in ("income", "fixed", "debt", "sovereign")):
         return "Income"
     if any(k in c for k in ("commodit", "gold")):
-        # Kept so this stays a faithful mirror of
-        # training-scripts-new/mufap/01_feature_engineering.py::classify().
-        # No fund in the current universe lands here, so no Commodity cluster
-        # is produced and none is trained.
-        return "Commodity"
+        return "Balanced"
     return "Balanced"
 
 

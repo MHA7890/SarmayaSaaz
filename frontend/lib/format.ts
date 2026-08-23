@@ -86,18 +86,22 @@ export function actionClass(action: string): string {
 export function relativeDate(iso: string | null | undefined, assetClass?: string): string {
   if (!iso) return "unknown";
   const dStr = iso.slice(0, 10);
-  const thenDate = new Date(dStr + "T00:00:00Z");
-  if (Number.isNaN(thenDate.getTime())) return iso;
+  const [y, m, d] = dStr.split("-").map(Number);
+  if (y === undefined || m === undefined || d === undefined || isNaN(y) || isNaN(m) || isNaN(d)) return iso;
 
+  // Local calendar midnight of the target date
+  const thenDate = new Date(y, m - 1, d);
+
+  // Local calendar midnight of today in user's local timezone
   const now = new Date();
-  const todayDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const diffTime = todayDate.getTime() - thenDate.getTime();
-  const days = Math.floor(diffTime / 86_400_000);
+  const days = Math.round(diffTime / 86_400_000);
 
   if (days <= 0) return "today";
   if (days === 1) return "yesterday";
-  if (days === 2 && (todayDate.getUTCDay() === 0 || todayDate.getUTCDay() === 6) && assetClass !== "crypto") {
+  if (days === 2 && (todayDate.getDay() === 0 || todayDate.getDay() === 6) && assetClass !== "crypto") {
     return "Fri close";
   }
   if (days < 30) return `${days} days ago`;

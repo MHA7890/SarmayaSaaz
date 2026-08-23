@@ -34,11 +34,27 @@ class RoutedEngine(Engine):
     def _scaler(self, group: str):
         path = self.models_dir / f"{group}_scaler.pkl"
         if not path.exists():
+            for p in self.models_dir.glob("*_scaler.pkl"):
+                if p.stem.casefold() == f"{group}_scaler".casefold():
+                    return joblib.load(p)
+            fallback = self.models_dir / "Balanced_scaler.pkl"
+            if fallback.exists():
+                return joblib.load(fallback)
+            scalers = list(self.models_dir.glob("*_scaler.pkl"))
+            if scalers:
+                return joblib.load(scalers[0])
             raise EngineError(f"Scaler missing for group '{group}'")
         return joblib.load(path)
 
     def _route(self, group: str, horizon: int) -> tuple[str, Path, float | None] | None:
         entry = self.routing.get(group, {}).get(f"{horizon}d")
+        if not entry:
+            entry = self.routing.get("Balanced", {}).get(f"{horizon}d")
+        if not entry:
+            for grp, hdict in self.routing.items():
+                if isinstance(hdict, dict) and f"{horizon}d" in hdict:
+                    entry = hdict[f"{horizon}d"]
+                    break
         if not entry:
             return None
         name = entry.get("Winning_Model")

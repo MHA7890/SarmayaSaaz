@@ -17,7 +17,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from backend.config import settings
+
+logger = logging.getLogger("sarmayasaaz.auto_update")
+
 STATUS_FILE = settings.data_ready_dir / ".sync_status.json"
+
 
 _SYNC_STATUS: dict[str, str | bool | int] = {
     "is_syncing": False,

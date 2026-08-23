@@ -437,9 +437,21 @@ def main() -> int:
 
         if not args.skip_snapshot:
             notify_sync_status(args.api_url, True, "Rebuilding whole-universe forecast snapshot...", 90)
-            logger.info("-> snapshot:build")
-            ok, secs, detail = run_step(Step("snapshot:build", ROOT / "scripts" / "build_snapshot.py"))
-            results.append(("snapshot:build", ok, secs, detail))
+            logger.info("-> snapshot:rebuild")
+            started = time.monotonic()
+            try:
+                from backend.engines import engines
+                from backend.services.snapshot import snapshot
+                engines.load_all()
+                snapshot.build(progress=False)
+                secs = time.monotonic() - started
+                logger.info("   done in %.1fs", secs)
+                results.append(("snapshot:rebuild", True, secs, ""))
+            except Exception as e:
+                secs = time.monotonic() - started
+                logger.error("   FAILED after %.1fs: %s", secs, e)
+                results.append(("snapshot:rebuild", False, secs, str(e)))
+
 
         # Freshness verification pass
         logger.info("=" * 78)

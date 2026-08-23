@@ -24,11 +24,11 @@ import websocket
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_new_common import (
-
     DATA_NEW,
     clean_ohlcv,
     clip_last_n_years,
     get_logger,
+    is_already_current,
     merge_incremental,
     read_existing_csv,
     trim_tail,
@@ -75,10 +75,16 @@ def run(names=None):
     items = {n: SYMBOLS[n] for n in names} if names else SYMBOLS
     ok, failed = [], []
     for name, symbol in items.items():
-        logger.info(f"Fetching {name} ({symbol}) from TradingView...")
         try:
             out_path = OUT_DIR / f"{name}.csv"
             existing = read_existing_csv(out_path)
+
+            if is_already_current(existing, tz="UTC"):
+                logger.info(f"  -> {name}: already up to date ({existing.index.max().date()})")
+                ok.append(name)
+                continue
+
+            logger.info(f"Fetching {name} ({symbol}) from TradingView...")
             trimmed = trim_tail(existing, 10)
             n_bars = 100 if not trimmed.empty else N_BARS
 
@@ -103,13 +109,14 @@ def run(names=None):
         except Exception as e:
             logger.error(f"  -> FAILED {name} ({symbol}): {e}")
             failed.append(name)
-        time.sleep(1.0)
+        time.sleep(0.5)
 
     logger.info("=" * 60)
     logger.info(f"Commodities collection complete: {len(ok)} ok, {len(failed)} failed")
     if failed:
         logger.warning(f"Failed: {failed}")
     return len(failed)
+
 
 
 

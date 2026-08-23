@@ -21,10 +21,12 @@ from data_new_common import (
     clean_ohlcv,
     clip_last_n_years,
     get_logger,
+    is_already_current,
     merge_incremental,
     read_existing_csv,
     trim_tail,
 )
+
 from tradingview_fetch import fetch_bars as fetch_tv_bars
 
 logger = get_logger("collect_crypto")
@@ -127,11 +129,18 @@ def run(tickers=None):
     ok, failed = [], []
     for ticker in tickers:
         symbol = binance_symbol(ticker)
-        logger.info(f"Fetching {ticker} ({symbol}) from Binance...")
         try:
             out_path = OUT_DIR / f"{ticker}.csv"
             existing = read_existing_csv(out_path)
+
+            if is_already_current(existing, tz="UTC"):
+                logger.info(f"  -> {ticker}: already up to date ({existing.index.max().date()})")
+                ok.append(ticker)
+                continue
+
+            logger.info(f"Fetching {ticker} ({symbol}) from Binance...")
             trimmed = trim_tail(existing, 10)
+
 
             if not trimmed.empty:
                 cutoff_date = trimmed.index.max()

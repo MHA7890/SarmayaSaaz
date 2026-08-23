@@ -31,12 +31,12 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_new_common import (
-
     DATA_NEW,
     clean_price_series,
     clip_last_n_years,
     drop_unclosed_sessions,
     get_logger,
+    is_already_current,
     merge_incremental,
     read_existing_csv,
     safe_filename,
@@ -77,7 +77,7 @@ def target_fund_names() -> list[str]:
     return sorted(set(names))
 
 
-def discover_fund_ids(retries: int = 4) -> dict[str, list[str]]:
+def discover_fund_ids(retries: int = 3) -> dict[str, list[str]]:
     """
     Map fund name -> FundID(s) from the MUFAP directory.
     """
@@ -85,14 +85,14 @@ def discover_fund_ids(retries: int = 4) -> dict[str, list[str]]:
     last_err: Exception | None = None
     for attempt in range(1, retries + 1):
         try:
-            resp = requests.get(DIRECTORY_URL, headers=HEADERS, timeout=30)
+            resp = requests.get(DIRECTORY_URL, headers=HEADERS, timeout=15)
             resp.raise_for_status()
             break
         except Exception as e:  # noqa: BLE001 - any transport error is retryable
             last_err = e
             if attempt < retries:
                 logger.warning(f"Fund directory attempt {attempt}/{retries} failed ({type(e).__name__}); retrying")
-                time.sleep(2.0 * attempt)
+                time.sleep(1.0 * attempt)
     if resp is None:
         raise RuntimeError(f"fund directory unreachable after {retries} attempts: {last_err}")
     mapping: dict[str, list[str]] = {}
@@ -102,7 +102,7 @@ def discover_fund_ids(retries: int = 4) -> dict[str, list[str]]:
     return mapping
 
 
-def fetch_fund_history(fund_id: str, retries: int = 4) -> tuple[str, pd.DataFrame]:
+def fetch_fund_history(fund_id: str, retries: int = 2) -> tuple[str, pd.DataFrame]:
     last_err = None
     data = None
     for attempt in range(retries):
@@ -113,7 +113,7 @@ def fetch_fund_history(fund_id: str, retries: int = 4) -> tuple[str, pd.DataFram
                          "Accept": "application/json, text/plain, */*", "Origin": BASE,
                          "Referer": f"{BASE}/FundProfile/FundDetail?FundID={fund_id}"},
                 data=json.dumps({"FundID": str(fund_id), "Date": "2026-08-01"}),
-                timeout=30,
+                timeout=10,
             )
             resp.raise_for_status()
             outer = resp.json()
@@ -123,7 +123,7 @@ def fetch_fund_history(fund_id: str, retries: int = 4) -> tuple[str, pd.DataFram
             last_err = RuntimeError("empty Table1")
         except Exception as e:
             last_err = e
-        time.sleep(2.0 * (attempt + 1))
+        time.sleep(1.0 * (attempt + 1))
     if data is None:
         raise last_err
 
@@ -162,10 +162,26 @@ def run():
 
         for fund_id in fund_ids:
             try:
+                # Resolve category placeholder first for file lookup if known, else default to check
+                temp_label = name
+                out_path = OUT_DIR / f"{safe_filename(temp_label)}.csv"
+                existing = read_existing_csv(out_path)
+
+                if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
+                    logger.info(f"  -> '{name}': already up to date ({existing.index.max().date()})")
+                    ok.append(name)
+                    continue
+
                 category, new_df = fetch_fund_history(fund_id)
                 label = f"{name} ({category})" if len(fund_ids) > 1 and category else name
                 out_path = OUT_DIR / f"{safe_filename(label)}.csv"
                 existing = read_existing_csv(out_path)
+
+                if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
+                    logger.info(f"  -> '{label}': already up to date ({existing.index.max().date()})")
+                    ok.append(label)
+                    continue
+
                 trimmed = trim_tail(existing, 10)
 
                 if new_df.empty and trimmed.empty:
@@ -189,13 +205,14 @@ def run():
             except Exception as e:
                 logger.error(f"  -> FAILED {name} [{fund_id}]: {e}")
                 failed.append(f"{name} [{fund_id}]")
-            time.sleep(0.5)
+            time.sleep(0.3)
 
     logger.info("=" * 60)
     logger.info(f"MUFAP collection complete: {len(ok)} files saved, {len(failed)} failed")
     if failed:
         logger.warning(f"Failed: {failed}")
     return len(failed)
+
 
 
 

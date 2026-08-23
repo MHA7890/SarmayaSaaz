@@ -19,12 +19,12 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data_new_common import (
-
     DATA_NEW,
     clean_ohlcv,
     clip_last_n_years,
     drop_unclosed_sessions,
     get_logger,
+    is_already_current,
     merge_incremental,
     read_existing_csv,
     trim_tail,
@@ -93,7 +93,7 @@ def parse_table(html: str) -> pd.DataFrame:
     return df
 
 
-def fetch_symbol(symbol: str, retries: int = 4) -> pd.DataFrame:
+def fetch_symbol(symbol: str, retries: int = 2) -> pd.DataFrame:
     """
     POST one symbol's history, retrying on transport failure.
     """
@@ -104,7 +104,7 @@ def fetch_symbol(symbol: str, retries: int = 4) -> pd.DataFrame:
                 HISTORICAL_URL,
                 headers=HEADERS,
                 data={"symbol": symbol},
-                timeout=30,
+                timeout=10,
             )
             if resp.status_code != 200:
                 raise RuntimeError(f"HTTP {resp.status_code}")
@@ -113,17 +113,23 @@ def fetch_symbol(symbol: str, retries: int = 4) -> pd.DataFrame:
             last_err = e
             if attempt < retries:
                 logger.warning(f"  -> {symbol}: attempt {attempt}/{retries} failed ({type(e).__name__}); retrying")
-                time.sleep(2.0 * attempt)
+                time.sleep(1.0 * attempt)
     raise RuntimeError(f"all {retries} attempts failed: {last_err}")
 
 
 def run():
     ok, failed = [], []
     for ticker in TICKERS:
-        logger.info(f"Fetching {ticker} from PSX DPS...")
         try:
             out_path = OUT_DIR / f"{ticker}.csv"
             existing = read_existing_csv(out_path)
+
+            if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
+                logger.info(f"  -> {ticker}: already up to date ({existing.index.max().date()})")
+                ok.append(ticker)
+                continue
+
+            logger.info(f"Fetching {ticker} from PSX DPS...")
             trimmed = trim_tail(existing, 10)
 
             new_df = fetch_symbol(ticker)
@@ -152,13 +158,14 @@ def run():
         except Exception as e:
             logger.error(f"  -> FAILED {ticker}: {e}")
             failed.append(ticker)
-        time.sleep(0.6)
+        time.sleep(0.3)
 
     logger.info("=" * 60)
     logger.info(f"PSX collection complete: {len(ok)} ok, {len(failed)} failed")
     if failed:
         logger.warning(f"Failed tickers: {failed}")
     return len(failed)
+
 
 
 

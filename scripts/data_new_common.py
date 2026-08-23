@@ -258,3 +258,42 @@ def merge_incremental(old_df: pd.DataFrame, new_df: pd.DataFrame) -> pd.DataFram
     combined = combined[~combined.index.duplicated(keep="last")].sort_index()
     return combined
 
+
+def is_already_current(
+    df: pd.DataFrame,
+    *,
+    tz: str = "Asia/Karachi",
+    session_close: str | None = None,
+) -> bool:
+    """
+    Check if existing DataFrame already has the latest expected closed trading session date.
+    Returns True if data is up to date, avoiding redundant network calls.
+    """
+    if df.empty:
+        return False
+
+    now = pd.Timestamp.now(tz=tz)
+    # Determine the most recent closed trading day date
+    if now.weekday() == 5:  # Saturday -> Friday
+        expected = (now - pd.Timedelta(days=1)).normalize().tz_localize(None)
+    elif now.weekday() == 6:  # Sunday -> Friday
+        expected = (now - pd.Timedelta(days=2)).normalize().tz_localize(None)
+    else:
+        today = now.normalize().tz_localize(None)
+        if session_close is not None:
+            hh, mm = (int(x) for x in session_close.split(":"))
+            closes_at = now.normalize() + pd.Timedelta(hours=hh, minutes=mm)
+            if now < closes_at:
+                expected = today - pd.Timedelta(days=3 if now.weekday() == 0 else 1)
+            else:
+                expected = today
+        else:
+            expected = today - pd.Timedelta(days=3 if now.weekday() == 0 else 1)
+
+    max_date = df.index.max().normalize()
+    if max_date.tz is not None:
+        max_date = max_date.tz_localize(None)
+
+    return max_date >= expected
+
+

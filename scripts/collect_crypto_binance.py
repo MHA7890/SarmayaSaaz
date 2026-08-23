@@ -105,9 +105,16 @@ def fetch_klines(symbol: str, start_ms: int, end_ms: int) -> list[list]:
 
 def _drop_forming_bar(df: pd.DataFrame) -> pd.DataFrame:
     """
-    For 24/7 crypto, keep today's bar so stored prices always reflect the current date.
+    Crypto trades 24/7. Drop the current UTC day's candle while it's still
+    accumulating so stored prices reflect only fully completed daily candles up to yesterday.
     """
+    if df.empty:
+        return df
+    today = pd.Timestamp(datetime.now(timezone.utc).date())
+    if df.index[-1] >= today:
+        return df.iloc[:-1]
     return df
+
 
 
 

@@ -44,13 +44,10 @@ _COMMODITY_SYMBOLS = {
 
 
 def _yahoo_symbol(ticker: str, asset_class: AssetClass) -> str | None:
-    if asset_class == AssetClass.CRYPTO:
-        return f"{ticker}-USD"
-    if asset_class == AssetClass.COMMODITY:
-        return _COMMODITY_SYMBOLS.get(ticker)
-    if asset_class == AssetClass.STOCK:
-        return f"{ticker}.KA"
+    # Primary price data comes strictly from stored daily exports (TradingView, PSX, Binance, MUFAP)
+    # to guarantee 100% consistency across the ribbon, market tables, and forecast models.
     return None
+
 
 
 @dataclass(frozen=True)

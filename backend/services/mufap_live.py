@@ -122,6 +122,9 @@ def _table() -> dict[str, dict[str, tuple[float, str]]]:
     return parsed
 
 
+_VARIANT_RE = re.compile(r"^(.*?)\s*\(([^()]+)\)$")
+
+
 def fetch_latest(fund: str, category: str | None = None) -> tuple[float, str] | None:
     """
     Best-effort (nav, as_of) for one fund name. None if unavailable.
@@ -135,7 +138,17 @@ def fetch_latest(fund: str, category: str | None = None) -> tuple[float, str] | 
     """
     if not settings.enable_live_prices:
         return None
-    entries = _table().get(fund)
+
+    # Handle fund tickers that embed category suffix, e.g. "Fund Name (VPS-Equity)"
+    match = _VARIANT_RE.match(fund)
+    if match:
+        fund_name = match.group(1).strip()
+        if not category:
+            category = match.group(2).strip()
+    else:
+        fund_name = fund.strip()
+
+    entries = _table().get(fund_name)
     if not entries:
         return None
     if len(entries) == 1:
@@ -144,4 +157,8 @@ def fetch_latest(fund: str, category: str | None = None) -> tuple[float, str] | 
         for cat, value in entries.items():
             if cat.casefold() == category.casefold():
                 return value
+        for cat, value in entries.items():
+            if category.casefold() in cat.casefold() or cat.casefold() in category.casefold():
+                return value
     return None
+

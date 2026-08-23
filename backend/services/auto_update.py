@@ -21,6 +21,27 @@ from backend.config import settings
 
 logger = logging.getLogger("sarmayasaaz.auto_update")
 
+_SYNC_STATUS: dict[str, str | bool | int] = {
+    "is_syncing": False,
+    "current_step": "Idle",
+    "progress": 0,
+    "updated_at": "",
+}
+
+
+def get_sync_status() -> dict[str, str | bool | int]:
+    return _SYNC_STATUS.copy()
+
+
+def set_sync_status(is_syncing: bool, step: str = "Idle", progress: int = 0) -> None:
+    global _SYNC_STATUS
+    _SYNC_STATUS["is_syncing"] = is_syncing
+    _SYNC_STATUS["current_step"] = step
+    _SYNC_STATUS["progress"] = progress
+    _SYNC_STATUS["updated_at"] = datetime.now(timezone.utc).isoformat()
+    logger.info("[SyncStatus] is_syncing=%s | progress=%d%% | step='%s'", is_syncing, progress, step)
+
+
 
 def get_expected_latest_date() -> pd.Timestamp:
     """

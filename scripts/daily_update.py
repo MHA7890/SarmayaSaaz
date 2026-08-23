@@ -274,9 +274,15 @@ def main() -> int:
     logger.info("Log file: %s", log_path)
     logger.info("=" * 78)
 
-    results: list[tuple[str, bool, float, str]] = []
+    notify_sync_status(args.api_url, True, "Initializing data procurement...", 10)
 
-    for cls in [c for c in CLASSES if c.name in selected]:
+    results: list[tuple[str, bool, float, str]] = []
+    total_classes = len(selected)
+
+    for idx, cls in enumerate([c for c in CLASSES if c.name in selected]):
+        step_progress = 10 + int((idx / max(1, total_classes)) * 70)
+        notify_sync_status(args.api_url, True, f"Updating {cls.name} daily bars & features...", step_progress)
+
         steps: list[Step] = []
         if not args.skip_collect:
             steps.append(Step(f"{cls.name}:collect", cls.collect))
@@ -317,16 +323,13 @@ def main() -> int:
         logger.info("   done in %.1fs", secs) if ok else logger.error("   FAILED: %s", detail)
 
     if not args.skip_snapshot:
+        notify_sync_status(args.api_url, True, "Rebuilding universe snapshot & predictions...", 90)
         logger.info("-> snapshot:rebuild")
         ok, secs, detail = run_step(Step("snapshot:rebuild", ROOT / "scripts" / "build_snapshot.py"), args.timeout)
         results.append(("snapshot:rebuild", ok, secs, detail))
         logger.info("   done in %.1fs", secs) if ok else logger.error("   FAILED: %s", detail)
 
     # -- tell a running API to re-read what we just wrote ----------------
-    # Best-effort: if no backend is up, the next start reads fresh files
-    # anyway. Without this a long-running process keeps serving the CSVs it
-    # cached at first request, so the files would be current and the
-    # dashboard would not.
     if not args.skip_reload:
         try:
             import urllib.request
@@ -340,6 +343,9 @@ def main() -> int:
             )
         except Exception as e:  # noqa: BLE001 - a down backend is not a failure
             logger.info("-> no running API to notify at %s (%s)", args.api_url, type(e).__name__)
+
+    # Mark sync as completed & unlock site
+    notify_sync_status(args.api_url, False, "Completed", 100)
 
     # -- report ---------------------------------------------------------
     failed = [r for r in results if not r[1]]

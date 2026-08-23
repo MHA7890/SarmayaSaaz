@@ -80,6 +80,7 @@ class MUFAPEngine(RoutedEngine):
         self._file_for: dict[str, tuple[str, str]] = {}  # ticker -> (cluster, filename)
         self._date_col: dict[str, str] = {}
         self._load_reference()
+        self._index_datasets()
         self._chart_exact, self._chart_variants = self._index_chart_files()
         self._drop_navless()
         logger.info("MUFAP engine ready: %d funds", len(self._file_for))

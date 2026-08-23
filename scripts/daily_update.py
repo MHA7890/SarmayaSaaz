@@ -440,6 +440,8 @@ def main() -> int:
             logger.info("-> snapshot:rebuild")
             started = time.monotonic()
             try:
+                if str(ROOT) not in sys.path:
+                    sys.path.insert(0, str(ROOT))
                 from backend.engines import engines
                 from backend.services.snapshot import snapshot
                 engines.load_all()
@@ -452,13 +454,13 @@ def main() -> int:
                 logger.error("   FAILED after %.1fs: %s", secs, e)
                 results.append(("snapshot:rebuild", False, secs, str(e)))
 
-
         # Freshness verification pass
         logger.info("=" * 78)
         logger.info("Verifying post-update freshness against %s", today.date())
         for cls in [c for c in CLASSES if c.name in selected]:
-            disp = audit_freshness(cls.name, "display", cls.display_glob)
-            model = audit_freshness(cls.name, "model inputs", cls.model_glob)
+            disp = scan_freshness(cls.display_glob)
+            model = scan_freshness(cls.model_glob)
+
 
             for layer, f in (("display", disp), ("model inputs", model)):
                 if f.newest is None:
@@ -515,8 +517,9 @@ def main() -> int:
     failed = [r for r in results if not r[1]]
 
     logger.info("-" * 78)
-    took = (datetime.now() - started).total_seconds()
+    took = time.monotonic() - started
     if failed:
+
         logger.error("Daily update finished in %.0fs with %d FAILED step(s):", took, len(failed))
         for name, _, _, detail in failed:
             logger.error("   %-24s %s", name, detail)

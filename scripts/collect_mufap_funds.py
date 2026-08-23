@@ -23,8 +23,11 @@ import html
 import json
 import re
 import sys
-import time
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import pandas as pd
 import requests
@@ -160,17 +163,68 @@ def fetch_fund_history(fund_id: str, retries: int = 2) -> tuple[str, pd.DataFram
     return category, df
 
 
-def run():
-    targets = target_fund_names()
-    logger.info(f"Target fund universe: {len(targets)} funds")
+def merge_live_table_navs() -> int:
+    """Supplement historical API calls with latest live NAVs published on MUFAP's industry table."""
+    try:
+        from backend.services import mufap_live
+        table = mufap_live._table()
+        if not table:
+            return 0
 
-    logger.info("Discovering FundIDs from MUFAP directory...")
-    id_map = discover_fund_ids()
-    logger.info(f"Directory returned {len(id_map)} distinct fund names")
+        merged_count = 0
+        for out_path in OUT_DIR.glob("*.csv"):
+            try:
+                df = pd.read_csv(out_path, index_col=0, parse_dates=True)
+                if df.empty:
+                    continue
+                max_d = df.index.max()
+                filename = out_path.stem
+                match_rgx = re.match(r"^(.*?)\s*\(([^()]+)\)$", filename)
+                fund = match_rgx.group(1).strip() if match_rgx else filename
+                cat = match_rgx.group(2).strip() if match_rgx else None
 
+                entries = table.get(fund, {})
+                match = None
+                if len(entries) == 1:
+                    match = list(entries.values())[0]
+                elif cat and entries:
+                    for c, val in entries.items():
+                        if c.casefold() == cat.casefold() or cat.casefold() in c.casefold():
+                            match = val
+                            break
+                if not match and entries:
+                    for c, val in entries.items():
+                        match = val
+                        break
+
+                if match:
+                    nav, as_of = match
+                    as_of_dt = pd.Timestamp(as_of)
+                    if as_of_dt > max_d:
+                        df.loc[as_of_dt, "NAV"] = nav
+                        df = df.sort_index()
+                        df.to_csv(out_path)
+                        merged_count += 1
+            except Exception:
+                continue
+        logger.info(f"Merged live MUFAP industry table NAVs into {merged_count} fund files")
+        return merged_count
+    except Exception as e:
+        logger.warning(f"Could not merge live MUFAP industry table: {e}")
+        return 0
+
+
+def run(target_names=None):
+    fund_map = discover_fund_ids()
+    target_names = target_names or target_fund_names()
+    if not target_names:
+        target_names = sorted(fund_map.keys())
+
+    logger.info(f"Targeting {len(target_names)} fund names across {len(fund_map)} directory entries")
     ok, failed = [], []
-    for name in targets:
-        fund_ids = id_map.get(name)
+
+    for name in target_names:
+        fund_ids = fund_map.get(name)
         if not fund_ids:
             logger.warning(f"  -> No FundID found for '{name}'")
             failed.append(name)
@@ -213,6 +267,8 @@ def run():
                 logger.error(f"  -> FAILED {name} [{fund_id}]: {e}")
                 failed.append(f"{name} [{fund_id}]")
             time.sleep(0.3)
+
+    merge_live_table_navs()
 
     logger.info("=" * 60)
     logger.info(f"MUFAP collection complete: {len(ok)} files saved, {len(failed)} failed")

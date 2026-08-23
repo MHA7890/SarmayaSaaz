@@ -26,17 +26,51 @@ type Row = {
   price?: number;
   projected?: number;
   band?: [number, number];
+  isNextOpen?: boolean;
 };
+
+export function isMarketClosed(assetClass: string): boolean {
+  const now = new Date();
+  const utcDay = now.getUTCDay();
+  const utcHour = now.getUTCHours();
+  const utcMinutes = utcHour * 60 + now.getUTCMinutes();
+  const ac = (assetClass || "").toLowerCase();
+
+
+  if (ac === "stock" || ac === "psx") {
+    if (utcDay === 0 || utcDay === 6) return true;
+    const openMinutes = 4 * 60 + 30; // 04:30 UTC (09:30 PKT)
+    const closeMinutes = 10 * 60 + 30; // 10:30 UTC (15:30 PKT)
+    return utcMinutes < openMinutes || utcMinutes >= closeMinutes;
+  }
+
+  if (ac === "commodity") {
+    if (utcDay === 6) return true; // Sat
+    if (utcDay === 5 && utcHour >= 21) return true; // Fri after 21:00 UTC
+    if (utcDay === 0 && utcHour < 22) return true; // Sun before 22:00 UTC
+    if (utcHour === 21) return true; // Daily 21:00-22:00 UTC break
+    return false;
+  }
+
+  return false;
+}
+
+function getNextTradingDate(asOf: string, assetClass: string): string {
+  const dt = new Date(asOf);
+  dt.setDate(dt.getDate() + 1);
+  const day = dt.getDay();
+  const ac = (assetClass || "").toLowerCase();
+  if (ac === "stock" || ac === "psx") {
+    if (day === 6) dt.setDate(dt.getDate() + 2);
+    else if (day === 0) dt.setDate(dt.getDate() + 1);
+  }
+  return dt.toISOString().slice(0, 10);
+}
 
 /**
  * History gets a fixed 70% of the plot width and the projection cone gets
  * the other 30%, regardless of how many points fall in each - the x-axis is
- * a synthetic [0, 1] position, not a real time scale. A category axis (equal
- * width per row) would let ~90 daily history points crowd out the 7 discrete
- * horizon points; a real time scale would size the cone by its actual day
- * span (120D) against history's, which shrinks it just as badly. Both
- * portions still preserve their own internal time proportions - only the
- * boundary between them is fixed.
+ * a synthetic [0, 1] position, not a real time scale.
  */
 const HISTORY_FRACTION = 0.7;
 
@@ -44,17 +78,10 @@ function buildSeries(
   forecast: Forecast,
   historyDays: number,
   selectedHorizonDays: number | null,
-): { rows: Row[]; histLen: number; toPos: (date: string) => number } {
+): { rows: Row[]; histLen: number; toPos: (date: string) => number; nextOpenPrice?: number } {
   const history = forecast.history.slice(-historyDays);
   const historyRows: Omit<Row, "pos">[] = history.map((p) => ({ date: p.date, price: p.price }));
 
-  // `history` is always the stored dataset's tail, but `as_of`/current_price
-  // can be genuinely newer when a live quote succeeded - stored data for a
-  // PSX stock might end 2026-07-30 while as_of is today. Anchoring on the
-  // stored series' last row in that case would date the whole projection (and
-  // any catalyst filtering downstream) weeks in the past. Add today as a real
-  // point when it isn't already the series' last row, so every date past
-  // this point reflects the true as_of, not a stale stored one.
   const lastStored = historyRows.at(-1);
   if (!lastStored || lastStored.date !== forecast.as_of) {
     historyRows.push({ date: forecast.as_of, price: forecast.current_price });
@@ -79,17 +106,35 @@ function buildSeries(
   anchor.band = [forecast.current_price, forecast.current_price];
   const histLen = rows.length;
 
-  // Plotting every trained horizon regardless of which one is selected is
-  // exactly why the projection used to look static when clicking between
-  // them - the curve never changed. Cutting the series off at the selected
-  // horizon means the cone actually redraws (a tight, near-term cone for 7D
-  // vs. a wide one reaching out to 120D), matching the EnsembleBreakdown
-  // panel beside it, which already reacts to the same selection.
   const sortedHorizons = [...forecast.horizons]
     .sort((a, b) => a.horizon_days - b.horizon_days)
     .filter((h) => selectedHorizonDays === null || h.horizon_days <= selectedHorizonDays);
   const maxHorizon = sortedHorizons.at(-1)?.horizon_days ?? 0;
   const start = new Date(forecast.as_of);
+
+  const marketClosed = isMarketClosed(forecast.asset_class);
+  const isEligibleAsset = forecast.asset_class === "commodity" || forecast.asset_class === "stock";
+  let nextOpenPrice: number | undefined;
+
+  if (marketClosed && isEligibleAsset && sortedHorizons.length > 0) {
+    const h0 = sortedHorizons[0];
+    if (h0) {
+      const dailyRate = Math.pow(h0.projected_price / forecast.current_price, 1 / Math.max(1, h0.horizon_days));
+      nextOpenPrice = forecast.current_price * dailyRate;
+      const nextDate = getNextTradingDate(forecast.as_of, forecast.asset_class);
+      const nextOpenPos = HISTORY_FRACTION + (maxHorizon > 0 ? (1 - HISTORY_FRACTION) * (1 / maxHorizon) : 0.05);
+
+      rows.push({
+        date: `${nextDate} (Next Open)`,
+        pos: nextOpenPos,
+        projected: nextOpenPrice,
+        isNextOpen: true,
+        band: [nextOpenPrice, nextOpenPrice],
+      });
+    }
+  }
+
+
   for (const h of sortedHorizons) {
     const at = new Date(start);
     at.setDate(at.getDate() + h.horizon_days);
@@ -107,7 +152,7 @@ function buildSeries(
           : undefined,
     });
   }
-  return { rows, histLen, toPos };
+  return { rows, histLen, toPos, nextOpenPrice };
 }
 
 /** Evenly-spaced sample of up to `n` rows from `arr`, endpoints included. */
@@ -128,12 +173,7 @@ const RANGES = [
   { label: "1Y", days: 365 },
 ];
 
-/** Default window close to the longest projected horizon (120D) so the
- * out-of-the-box chart doesn't make the projection look like a sliver
- * against months of unrelated history. 6M/1Y stay available as an explicit
- * zoom-out, where the ratio shifting is an expected trade-off. */
 const DEFAULT_RANGE_DAYS = 90;
-
 const MAX_CATALYST_DATES = 10;
 
 type CatalystGroup = { date: string; pos: number; items: NewsCatalyst[] };
@@ -146,18 +186,18 @@ export function ForecastChart({
   selectedHorizonDays?: number | null;
 }) {
   const [range, setRange] = useState(DEFAULT_RANGE_DAYS);
-  const { rows: data, histLen, toPos } = useMemo(
+  const { rows: data, histLen, toPos, nextOpenPrice } = useMemo(
     () => buildSeries(forecast, range, selectedHorizonDays),
     [forecast, range, selectedHorizonDays],
   );
   const junction = forecast.as_of;
+  const marketClosed = isMarketClosed(forecast.asset_class);
+  const isEligibleAsset = forecast.asset_class === "commodity" || forecast.asset_class === "stock";
 
   const hasBand = forecast.horizons.some(
     (h) => h.lower_bound !== null && h.upper_bound !== null,
   );
 
-  // A handful of labeled ticks on each side of the 70/30 boundary, sampled
-  // from the actual rows so every label lines up with a real data point.
   const { tickPositions, tickLabelMap } = useMemo(() => {
     const chosen = [...sampleRows(data.slice(0, histLen), 5), ...sampleRows(data.slice(histLen), 3)];
     const map = new Map<number, string>();
@@ -172,9 +212,6 @@ export function ForecastChart({
     return { tickPositions: positions, tickLabelMap: map };
   }, [data, histLen]);
 
-  // Live news for the same asset is often several headlines on the same
-  // day - grouped by date so the chart shows one marker per day instead of
-  // a stack of indistinguishable overlapping dots.
   const visibleCatalysts = useMemo(() => {
     const earliest = data[0]?.date;
     if (!earliest || !junction) return [];
@@ -185,9 +222,6 @@ export function ForecastChart({
       list.push(c);
       byDate.set(c.date, list);
     }
-    // Within a day, lead with a headline about this asset rather than a
-    // market-wide one ("PSX dips 1,109 points") - the hover box shows the
-    // first item, so this decides what the marker appears to be about.
     for (const items of byDate.values()) {
       items.sort((a, b) => Number(a.market_wide) - Number(b.market_wide));
     }
@@ -196,17 +230,11 @@ export function ForecastChart({
       .map(([date, items]) => ({ date, items, pos: toPos(date) }))
       .sort((a, b) => (a.date < b.date ? -1 : 1));
 
-    // More dates carry news than the chart can show legibly. Taking the most
-    // recent would bunch every marker against the right edge - a 30D BTC
-    // window has news on 22 of 30 days - so sample evenly across the window
-    // and keep the spread the markers are there to convey.
     if (groups.length <= MAX_CATALYST_DATES) return groups;
     const step = (groups.length - 1) / (MAX_CATALYST_DATES - 1);
     const picked: typeof groups = [];
     for (let i = 0; i < MAX_CATALYST_DATES; i++) {
       const g = groups[Math.round(i * step)];
-      // Rounding can land on the same index twice for small spans; keep the
-      // markers distinct rather than stacking two on one date.
       if (g && picked[picked.length - 1] !== g) picked.push(g);
     }
     return picked;
@@ -231,7 +259,15 @@ export function ForecastChart({
     <section className="card p-5" aria-label="Price history and forecast projection">
       <header className="mb-1 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold">Price History &amp; AI Projection</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-sm font-semibold">Price History &amp; AI Projection</h2>
+            {marketClosed && isEligibleAsset && nextOpenPrice !== undefined && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1.5 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Market Closed · Projected Next Open: {formatPrice(nextOpenPrice, forecast.currency, forecast.asset_class)}
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 text-xs text-dim">
             {forecast.unit} · observed through {forecast.as_of}
           </p>
@@ -250,7 +286,7 @@ export function ForecastChart({
         </div>
       </header>
 
-      {/* Legend is always present for >= 2 series, so identity never rests on colour alone. */}
+      {/* Legend is always present for >= 2 series */}
       <div className="mb-3 flex flex-wrap items-center gap-4 text-xs">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-0.5 w-4 rounded" style={{ background: HISTORICAL }} />
@@ -308,12 +344,6 @@ export function ForecastChart({
                 x={HISTORY_FRACTION}
                 stroke="rgb(var(--dim))"
                 strokeDasharray="2 4"
-                label={{
-                  value: "today",
-                  position: "insideTopRight",
-                  fill: "rgb(var(--dim))",
-                  fontSize: 10,
-                }}
               />
             )}
 
@@ -346,8 +376,6 @@ export function ForecastChart({
               name="AI projection"
             />
 
-            {/* Rendered after the Area/Lines so a marker near "today" always
-                paints on top of the confidence band and stays hoverable. */}
             {visibleCatalysts.map((g) => (
               <ReferenceLine
                 key={g.date}
@@ -391,13 +419,20 @@ export function ForecastChart({
                         {formatPrice(row.price, forecast.currency, forecast.asset_class)}
                       </p>
                     )}
-                    {row.projected !== undefined && (
-                      <p className="num text-xs">
-                        <span className="text-dim">Projected </span>
-                        {formatPrice(row.projected, forecast.currency, forecast.asset_class)}
+                    {row.isNextOpen ? (
+                      <p className="num text-xs font-semibold text-amber-300">
+                        <span className="text-amber-400/80">Projected Next Open </span>
+                        {formatPrice(row.projected ?? 0, forecast.currency, forecast.asset_class)}
                       </p>
+                    ) : (
+                      row.projected !== undefined && (
+                        <p className="num text-xs">
+                          <span className="text-dim">Projected </span>
+                          {formatPrice(row.projected, forecast.currency, forecast.asset_class)}
+                        </p>
+                      )
                     )}
-                    {row.band && row.band[0] !== row.band[1] && (
+                    {row.band && row.band[0] !== row.band[1] && !row.isNextOpen && (
                       <p className="num mt-0.5 text-[11px] text-dim">
                         Range {formatPrice(row.band[0], forecast.currency, forecast.asset_class)}{" "}
                         – {formatPrice(row.band[1], forecast.currency, forecast.asset_class)}
@@ -437,3 +472,4 @@ export function ForecastChart({
     </section>
   );
 }
+

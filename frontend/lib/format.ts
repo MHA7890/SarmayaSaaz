@@ -90,7 +90,7 @@ export function relativeDate(iso: string | null | undefined, assetClass?: string
 
   const now = new Date();
   const days = Math.floor((now.getTime() - then.getTime()) / 86_400_000);
-  if (days <= 0) return "today";
+  if (days <= 0) return iso.slice(0, 10);
   if (days === 1) return "yesterday";
   if (days === 2 && (now.getDay() === 0 || now.getDay() === 6) && assetClass !== "crypto") {
     return "Fri close";
@@ -99,6 +99,7 @@ export function relativeDate(iso: string | null | undefined, assetClass?: string
   const months = Math.floor(days / 30);
   return months === 1 ? "1 month ago" : `${months} months ago`;
 }
+
 
 
 export function horizonLabel(days: number): string {

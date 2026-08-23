@@ -23,13 +23,13 @@ so Task Scheduler surfaces it as a failed run rather than a silent no-op.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import logging
 import subprocess
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd

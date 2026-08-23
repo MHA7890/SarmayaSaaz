@@ -134,6 +134,7 @@ CLASSES = [
         features=ROOT / "training-scripts-new" / "psx" / "01_feature_engineering.py",
         display_glob="data-new/psx-data/*.csv",
         model_glob="data-ready/psx/**/*.csv",
+        per_asset_max_age_days=10,
     ),
     AssetClass(
         name="mufap",

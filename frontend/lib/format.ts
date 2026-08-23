@@ -85,20 +85,26 @@ export function actionClass(action: string): string {
 
 export function relativeDate(iso: string | null | undefined, assetClass?: string): string {
   if (!iso) return "unknown";
-  const then = new Date(iso);
-  if (Number.isNaN(then.getTime())) return iso;
+  const dStr = iso.slice(0, 10);
+  const thenDate = new Date(dStr + "T00:00:00Z");
+  if (Number.isNaN(thenDate.getTime())) return iso;
 
   const now = new Date();
-  const days = Math.floor((now.getTime() - then.getTime()) / 86_400_000);
-  if (days <= 0) return iso.slice(0, 10);
+  const todayDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+  const diffTime = todayDate.getTime() - thenDate.getTime();
+  const days = Math.floor(diffTime / 86_400_000);
+
+  if (days <= 0) return "today";
   if (days === 1) return "yesterday";
-  if (days === 2 && (now.getDay() === 0 || now.getDay() === 6) && assetClass !== "crypto") {
+  if (days === 2 && (todayDate.getUTCDay() === 0 || todayDate.getUTCDay() === 6) && assetClass !== "crypto") {
     return "Fri close";
   }
   if (days < 30) return `${days} days ago`;
   const months = Math.floor(days / 30);
   return months === 1 ? "1 month ago" : `${months} months ago`;
 }
+
 
 
 

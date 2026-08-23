@@ -26,37 +26,7 @@ type Row = {
   price?: number;
   projected?: number;
   band?: [number, number];
-  isNextOpen?: boolean;
 };
-
-export function isMarketClosed(assetClass: string): boolean {
-  const now = new Date();
-  const utcDay = now.getUTCDay();
-  const utcHour = now.getUTCHours();
-  const utcMinutes = utcHour * 60 + now.getUTCMinutes();
-  const ac = (assetClass || "").toLowerCase();
-
-  if (ac === "stock" || ac === "psx") {
-    if (utcDay === 0 || utcDay === 6) return true;
-    const openMinutes = 4 * 60 + 30; // 04:30 UTC (09:30 PKT)
-    const closeMinutes = 10 * 60 + 30; // 10:30 UTC (15:30 PKT)
-    return utcMinutes < openMinutes || utcMinutes >= closeMinutes;
-  }
-
-  return false;
-}
-
-function getNextTradingDate(asOf: string, assetClass: string): string {
-  const dt = new Date(asOf);
-  dt.setDate(dt.getDate() + 1);
-  const day = dt.getDay();
-  const ac = (assetClass || "").toLowerCase();
-  if (ac === "stock" || ac === "psx") {
-    if (day === 6) dt.setDate(dt.getDate() + 2);
-    else if (day === 0) dt.setDate(dt.getDate() + 1);
-  }
-  return dt.toISOString().slice(0, 10);
-}
 
 /**
  * History gets a fixed 70% of the plot width and the projection cone gets
@@ -69,7 +39,7 @@ function buildSeries(
   forecast: Forecast,
   historyDays: number,
   selectedHorizonDays: number | null,
-): { rows: Row[]; histLen: number; toPos: (date: string) => number; nextOpenPrice?: number } {
+): { rows: Row[]; histLen: number; toPos: (date: string) => number } {
   const history = forecast.history.slice(-historyDays);
   const historyRows: Omit<Row, "pos">[] = history.map((p) => ({ date: p.date, price: p.price }));
 
@@ -103,30 +73,6 @@ function buildSeries(
   const maxHorizon = sortedHorizons.at(-1)?.horizon_days ?? 0;
   const start = new Date(forecast.as_of);
 
-  const marketClosed = isMarketClosed(forecast.asset_class);
-  const isEligibleAsset = forecast.asset_class === "stock";
-
-  let nextOpenPrice: number | undefined;
-
-  if (marketClosed && isEligibleAsset && sortedHorizons.length > 0) {
-    const h0 = sortedHorizons[0];
-    if (h0) {
-      const dailyRate = Math.pow(h0.projected_price / forecast.current_price, 1 / Math.max(1, h0.horizon_days));
-      nextOpenPrice = forecast.current_price * dailyRate;
-      const nextDate = getNextTradingDate(forecast.as_of, forecast.asset_class);
-      const nextOpenPos = HISTORY_FRACTION + (maxHorizon > 0 ? (1 - HISTORY_FRACTION) * (1 / maxHorizon) : 0.05);
-
-      rows.push({
-        date: `${nextDate} (Next Open)`,
-        pos: nextOpenPos,
-        projected: nextOpenPrice,
-        isNextOpen: true,
-        band: [nextOpenPrice, nextOpenPrice],
-      });
-    }
-  }
-
-
   for (const h of sortedHorizons) {
     const at = new Date(start);
     at.setDate(at.getDate() + h.horizon_days);
@@ -144,8 +90,10 @@ function buildSeries(
           : undefined,
     });
   }
-  return { rows, histLen, toPos, nextOpenPrice };
+
+  return { rows, histLen, toPos };
 }
+
 
 /** Evenly-spaced sample of up to `n` rows from `arr`, endpoints included. */
 function sampleRows(arr: Row[], n: number): Row[] {
@@ -178,17 +126,16 @@ export function ForecastChart({
   selectedHorizonDays?: number | null;
 }) {
   const [range, setRange] = useState(DEFAULT_RANGE_DAYS);
-  const { rows: data, histLen, toPos, nextOpenPrice } = useMemo(
+  const { rows: data, histLen, toPos } = useMemo(
     () => buildSeries(forecast, range, selectedHorizonDays),
     [forecast, range, selectedHorizonDays],
   );
   const junction = forecast.as_of;
-  const marketClosed = isMarketClosed(forecast.asset_class);
-  const isEligibleAsset = forecast.asset_class === "commodity" || forecast.asset_class === "stock";
 
   const hasBand = forecast.horizons.some(
     (h) => h.lower_bound !== null && h.upper_bound !== null,
   );
+
 
   const { tickPositions, tickLabelMap } = useMemo(() => {
     const chosen = [...sampleRows(data.slice(0, histLen), 5), ...sampleRows(data.slice(histLen), 3)];
@@ -251,19 +198,12 @@ export function ForecastChart({
     <section className="card p-5" aria-label="Price history and forecast projection">
       <header className="mb-1 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-sm font-semibold">Price History &amp; AI Projection</h2>
-            {marketClosed && isEligibleAsset && nextOpenPrice !== undefined && (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1.5 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                Market Closed · Projected Next Open: {formatPrice(nextOpenPrice, forecast.currency, forecast.asset_class)}
-              </span>
-            )}
-          </div>
+          <h2 className="text-sm font-semibold">Price History &amp; AI Projection</h2>
           <p className="mt-0.5 text-xs text-dim">
             {forecast.unit} · observed through {forecast.as_of}
           </p>
         </div>
+
         <div className="flex gap-1" role="group" aria-label="History range">
           {RANGES.map((r) => (
             <button
@@ -411,25 +351,19 @@ export function ForecastChart({
                         {formatPrice(row.price, forecast.currency, forecast.asset_class)}
                       </p>
                     )}
-                    {row.isNextOpen ? (
-                      <p className="num text-xs font-semibold text-amber-300">
-                        <span className="text-amber-400/80">Projected Next Open </span>
-                        {formatPrice(row.projected ?? 0, forecast.currency, forecast.asset_class)}
+                    {row.projected !== undefined && (
+                      <p className="num text-xs">
+                        <span className="text-dim">Projected </span>
+                        {formatPrice(row.projected, forecast.currency, forecast.asset_class)}
                       </p>
-                    ) : (
-                      row.projected !== undefined && (
-                        <p className="num text-xs">
-                          <span className="text-dim">Projected </span>
-                          {formatPrice(row.projected, forecast.currency, forecast.asset_class)}
-                        </p>
-                      )
                     )}
-                    {row.band && row.band[0] !== row.band[1] && !row.isNextOpen && (
+                    {row.band && row.band[0] !== row.band[1] && (
                       <p className="num mt-0.5 text-[11px] text-dim">
                         Range {formatPrice(row.band[0], forecast.currency, forecast.asset_class)}{" "}
                         – {formatPrice(row.band[1], forecast.currency, forecast.asset_class)}
                       </p>
                     )}
+
                   </div>
                 );
               }}

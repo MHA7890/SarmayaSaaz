@@ -33,7 +33,10 @@ from data_new_common import (
     clip_last_n_years,
     drop_unclosed_sessions,
     get_logger,
+    merge_incremental,
+    read_existing_csv,
     safe_filename,
+    trim_tail,
 )
 
 logger = get_logger("collect_mufap")
@@ -43,11 +46,6 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 RETURN_THRESHOLD = 0.50  # NAV should be stable day to day; catches obvious glitches
 MARKET_TZ = "Asia/Karachi"  # MUFAP publishes NAV dates in local time
-# NAV is computed once daily from end-of-day valuation and published on a
-# staggered schedule - some funds are up by mid-morning (ABL Cash Fund had
-# today's NAV at 11:26 PKT) while others lag into the evening. By this hour
-# publication is effectively complete; a fund that still has not published
-# simply carries no row for today and correctly shows its previous NAV.
 SESSION_CLOSE = "19:00"
 YEARS = 10
 
@@ -78,10 +76,6 @@ def target_fund_names() -> list[str]:
 def discover_fund_ids(retries: int = 4) -> dict[str, list[str]]:
     """
     Map fund name -> FundID(s) from the MUFAP directory.
-
-    Retried because this single call gates the entire collection: one
-    ConnectTimeout here aborted a whole scheduled run before a single fund was
-    fetched, while fetch_fund_history() below was already retrying.
     """
     resp = None
     last_err: Exception | None = None
@@ -164,16 +158,20 @@ def run():
 
         for fund_id in fund_ids:
             try:
-                category, df = fetch_fund_history(fund_id)
-                if df.empty:
+                category, new_df = fetch_fund_history(fund_id)
+                label = f"{name} ({category})" if len(fund_ids) > 1 and category else name
+                out_path = OUT_DIR / f"{safe_filename(label)}.csv"
+                existing = read_existing_csv(out_path)
+                trimmed = trim_tail(existing, 10)
+
+                if new_df.empty and trimmed.empty:
                     logger.warning(f"  -> {name} [{fund_id}]: no NAV history returned")
                     failed.append(f"{name} [{fund_id}]")
                     continue
 
-                df, removed = clean_price_series(df, "NAV", return_threshold=RETURN_THRESHOLD, adjust_stock_splits=True)
+                merged = merge_incremental(trimmed, new_df)
+                df, removed = clean_price_series(merged, "NAV", return_threshold=RETURN_THRESHOLD, adjust_stock_splits=True)
                 df = clip_last_n_years(df, YEARS)
-                # Funds publish today's NAV at staggered times; excluding the
-                # current day keeps the universe on one consistent date.
                 df, _ = drop_unclosed_sessions(
                     df, tz=MARKET_TZ, session_close=SESSION_CLOSE
                 )
@@ -181,8 +179,6 @@ def run():
                     failed.append(f"{name} [{fund_id}]")
                     continue
 
-                label = f"{name} ({category})" if len(fund_ids) > 1 and category else name
-                out_path = OUT_DIR / f"{safe_filename(label)}.csv"
                 df.to_csv(out_path)
                 logger.info(f"  -> Saved '{label}': {len(df)} rows ({df.index.min().date()} -> {df.index.max().date()}), removed {removed} bad rows")
                 ok.append(label)
@@ -196,6 +192,7 @@ def run():
     if failed:
         logger.warning(f"Failed: {failed}")
     return len(failed)
+
 
 
 if __name__ == "__main__":

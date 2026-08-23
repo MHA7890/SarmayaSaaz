@@ -2,9 +2,10 @@
 Daily data refresh: collect -> engineer features -> rebuild the snapshot.
 
 Run this once a day (see docs/automation.md for the Windows Task Scheduler
-registration). Every step is idempotent: the collectors re-fetch the full 10y
-window and rewrite each CSV, so a missed day self-heals on the next run and
-there is no incremental-merge state to corrupt.
+registration). Every step is idempotent: collectors perform incremental updates
+(trimming recent buffer rows and merging newly fetched bars into existing CSVs),
+ensuring fast daily updates and robust self-healing.
+
 
 Two layers have to move together for the dashboard to actually advance:
 

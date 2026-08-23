@@ -29,7 +29,9 @@ warnings.filterwarnings("ignore")
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "training-scripts-new"))
+sys.path.insert(0, str(ROOT / "scripts"))
 from common.progress import StageProgress  # noqa: E402
+
 
 RAW_DIR = ROOT / "data-new" / "crypto-data"
 OUT_DIR = ROOT / "data-ready" / "crypto"
@@ -150,7 +152,19 @@ def load_fear_greed() -> pd.Series:
 
 
 def fetch_sp500_return() -> pd.Series:
-    print("  Fetching ^GSPC (S&P 500) for SP500_Return_7d ...")
+    print("  Fetching S&P 500 for SP500_Return_7d ...")
+    try:
+        from tradingview_fetch import fetch_bars
+        sp_df = fetch_bars("SP:SPX", n_bars=3000)
+        if not sp_df.empty:
+            close = sp_df["Close"]
+            ret = np.log(close / close.shift(7))
+            ret.index = pd.to_datetime(ret.index).normalize()
+            return ret.rename("SP500_Return_7d")
+    except Exception as e:
+        print(f"  TradingView fetch for S&P 500 failed ({e}); falling back to yfinance ^GSPC...")
+
+    import yfinance as yf
     sp = yf.download("^GSPC", period="10y", interval="1d", progress=False)
     if isinstance(sp.columns, pd.MultiIndex):
         sp.columns = [c[0] for c in sp.columns]
@@ -158,6 +172,7 @@ def fetch_sp500_return() -> pd.Series:
     ret = np.log(close / close.shift(7))
     ret.index = pd.to_datetime(ret.index).normalize()
     return ret.rename("SP500_Return_7d")
+
 
 
 def compute_btc_volatility() -> pd.Series:

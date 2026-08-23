@@ -21,6 +21,9 @@ from data_new_common import (
     clip_last_n_years,
     drop_unclosed_sessions,
     get_logger,
+    merge_incremental,
+    read_existing_csv,
+    trim_tail,
 )
 
 logger = get_logger("collect_psx")
@@ -89,11 +92,6 @@ def parse_table(html: str) -> pd.DataFrame:
 def fetch_symbol(symbol: str, retries: int = 4) -> pd.DataFrame:
     """
     POST one symbol's history, retrying on transport failure.
-
-    dps.psx.com.pk refuses or times out under sustained sequential load: a full
-    97-ticker pass with no retry came back 53 ok / 44 failed, almost all
-    ConnectTimeout. The host is not rate-limiting by response code, it simply
-    drops connections, so a backoff between attempts recovers nearly all of it.
     """
     last_err: Exception | None = None
     for attempt in range(1, retries + 1):
@@ -120,17 +118,19 @@ def run():
     for ticker in TICKERS:
         logger.info(f"Fetching {ticker} from PSX DPS...")
         try:
-            df = fetch_symbol(ticker)
-            if df.empty:
+            out_path = OUT_DIR / f"{ticker}.csv"
+            existing = read_existing_csv(out_path)
+            trimmed = trim_tail(existing, 10)
+
+            new_df = fetch_symbol(ticker)
+            if new_df.empty and trimmed.empty:
                 logger.warning(f"  -> No data returned for {ticker}")
                 failed.append(ticker)
                 continue
 
-            df = df[~df.index.duplicated(keep="last")]
-            df, removed = clean_ohlcv(df, return_threshold=RETURN_THRESHOLD, adjust_stock_splits=True)
+            merged = merge_incremental(trimmed, new_df)
+            df, removed = clean_ohlcv(merged, return_threshold=RETURN_THRESHOLD, adjust_stock_splits=True)
             df = clip_last_n_years(df, YEARS)
-            # PSX dates are local trading dates; the feed includes the running
-            # session while the market is open. See drop_unclosed_sessions.
             df, unclosed = drop_unclosed_sessions(
                 df, tz=MARKET_TZ, session_close=SESSION_CLOSE
             )
@@ -142,7 +142,6 @@ def run():
                 failed.append(ticker)
                 continue
 
-            out_path = OUT_DIR / f"{ticker}.csv"
             df.to_csv(out_path)
             logger.info(f"  -> Saved {ticker}: {len(df)} rows ({df.index.min().date()} -> {df.index.max().date()}), removed {removed} bad rows")
             ok.append(ticker)
@@ -156,6 +155,7 @@ def run():
     if failed:
         logger.warning(f"Failed tickers: {failed}")
     return len(failed)
+
 
 
 if __name__ == "__main__":

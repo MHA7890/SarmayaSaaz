@@ -13,7 +13,15 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 import requests
 
-from data_new_common import DATA_NEW, clean_ohlcv, clip_last_n_years, get_logger
+from data_new_common import (
+    DATA_NEW,
+    clean_ohlcv,
+    clip_last_n_years,
+    get_logger,
+    merge_incremental,
+    read_existing_csv,
+    trim_tail,
+)
 
 logger = get_logger("collect_crypto")
 
@@ -89,9 +97,7 @@ def _drop_forming_bar(df: pd.DataFrame) -> pd.DataFrame:
     while it's still accumulating - crypto trades 24/7, so unlike an exchange
     with fixed hours there's never a point where "today" is guaranteed
     closed. That row's Close is just whatever the price is right now, not a
-    settled value (the same issue found in the TradingView commodities feed:
-    Open/High can be final while Low/Close are still moving). A bar dated
-    strictly before today has had its full 24h window elapse and is safe.
+    settled value.
     """
     if df.empty:
         return df
@@ -104,32 +110,45 @@ def _drop_forming_bar(df: pd.DataFrame) -> pd.DataFrame:
 def run(tickers=None):
     tickers = tickers or TICKERS
     end = datetime.now(timezone.utc)
-    start = end - timedelta(days=365 * YEARS + 10)
+    default_start = end - timedelta(days=365 * YEARS + 10)
     end_ms = int(end.timestamp() * 1000)
-    start_ms = int(start.timestamp() * 1000)
+    default_start_ms = int(default_start.timestamp() * 1000)
 
     ok, failed = [], []
     for ticker in tickers:
         symbol = binance_symbol(ticker)
         logger.info(f"Fetching {ticker} ({symbol}) from Binance...")
         try:
-            klines = fetch_klines(symbol, start_ms, end_ms)
-            if not klines:
+            out_path = OUT_DIR / f"{ticker}.csv"
+            existing = read_existing_csv(out_path)
+            trimmed = trim_tail(existing, 10)
+
+            if not trimmed.empty:
+                cutoff_date = trimmed.index.max()
+                fetch_start_ms = int(cutoff_date.timestamp() * 1000)
+            else:
+                fetch_start_ms = default_start_ms
+
+            klines = fetch_klines(symbol, fetch_start_ms, end_ms)
+            if not klines and trimmed.empty:
                 logger.warning(f"  -> No data returned for {symbol}")
                 failed.append(ticker)
                 continue
 
-            df = pd.DataFrame(klines, columns=[
-                "OpenTime", "Open", "High", "Low", "Close", "Volume",
-                "CloseTime", "QuoteVolume", "Trades", "TakerBaseVol", "TakerQuoteVol", "Ignore",
-            ])
-            df["Date"] = pd.to_datetime(df["OpenTime"], unit="ms").dt.normalize()
-            for c in ["Open", "High", "Low", "Close", "Volume"]:
-                df[c] = pd.to_numeric(df[c], errors="coerce")
-            df = df[["Date", "Open", "High", "Low", "Close", "Volume"]].set_index("Date")
-            df = df[~df.index.duplicated(keep="last")].sort_index()
+            new_df = pd.DataFrame()
+            if klines:
+                df_k = pd.DataFrame(klines, columns=[
+                    "OpenTime", "Open", "High", "Low", "Close", "Volume",
+                    "CloseTime", "QuoteVolume", "Trades", "TakerBaseVol", "TakerQuoteVol", "Ignore",
+                ])
+                df_k["Date"] = pd.to_datetime(df_k["OpenTime"], unit="ms").dt.normalize()
+                for c in ["Open", "High", "Low", "Close", "Volume"]:
+                    df_k[c] = pd.to_numeric(df_k[c], errors="coerce")
+                new_df = df_k[["Date", "Open", "High", "Low", "Close", "Volume"]].set_index("Date")
+                new_df = new_df[~new_df.index.duplicated(keep="last")].sort_index()
 
-            df, removed = clean_ohlcv(df, return_threshold=RETURN_THRESHOLD)
+            merged = merge_incremental(trimmed, new_df)
+            df, removed = clean_ohlcv(merged, return_threshold=RETURN_THRESHOLD)
             df = clip_last_n_years(df, YEARS)
             df = _drop_forming_bar(df)
 
@@ -138,7 +157,6 @@ def run(tickers=None):
                 failed.append(ticker)
                 continue
 
-            out_path = OUT_DIR / f"{ticker}.csv"
             df.to_csv(out_path)
             logger.info(f"  -> Saved {ticker}: {len(df)} rows ({df.index.min().date()} -> {df.index.max().date()}), removed {removed} bad rows")
             ok.append(ticker)
@@ -152,6 +170,7 @@ def run(tickers=None):
     if failed:
         logger.warning(f"Failed tickers: {failed}")
     return len(failed)
+
 
 
 if __name__ == "__main__":

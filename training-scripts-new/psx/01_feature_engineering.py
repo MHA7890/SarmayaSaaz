@@ -30,7 +30,9 @@ warnings.filterwarnings("ignore")
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "training-scripts-new"))
+sys.path.insert(0, str(ROOT / "scripts"))
 from common.progress import StageProgress  # noqa: E402
+
 
 RAW_DIR = ROOT / "data-new" / "psx-data"
 OUT_DIR = ROOT / "data-ready" / "psx"
@@ -99,8 +101,32 @@ def technical_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+TV_MACRO_SYMBOLS = {
+    "PKR=X": "FX_IDC:USDPKR",
+    "CL=F": "TVC:USOIL",
+    "^IXIC": "NASDAQ:IXIC",
+}
+
+
 def macro_proxy(ticker: str, prefix: str, start: str, end: str) -> pd.DataFrame:
     print(f"  Fetching {ticker} for {prefix}_* macro proxy ...")
+    tv_symbol = TV_MACRO_SYMBOLS.get(ticker)
+    if tv_symbol:
+        try:
+            from tradingview_fetch import fetch_bars
+            df_tv = fetch_bars(tv_symbol, n_bars=3000)
+            if not df_tv.empty:
+                close = df_tv["Close"]
+                out = pd.DataFrame(index=df_tv.index)
+                out[f"{prefix}_Log_Return"] = np.log(close / close.shift(1))
+                out[f"{prefix}_SMA_200_Ratio"] = close / ta.trend.sma_indicator(close, window=200)
+                out[f"{prefix}_Volatility_30d"] = out[f"{prefix}_Log_Return"].rolling(30).std()
+                out.index = pd.to_datetime(out.index).normalize()
+                return out
+        except Exception as e:
+            print(f"  TradingView fetch for {tv_symbol} failed ({e}); falling back to yfinance {ticker}...")
+
+    import yfinance as yf
     raw = yf.download(ticker, start=start, end=end, progress=False)
     if isinstance(raw.columns, pd.MultiIndex):
         raw.columns = [c[0] for c in raw.columns]
@@ -111,6 +137,7 @@ def macro_proxy(ticker: str, prefix: str, start: str, end: str) -> pd.DataFrame:
     out[f"{prefix}_Volatility_30d"] = out[f"{prefix}_Log_Return"].rolling(30).std()
     out.index = pd.to_datetime(out.index).normalize()
     return out
+
 
 
 def run():

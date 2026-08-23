@@ -224,3 +224,37 @@ def clip_last_n_years(df: pd.DataFrame, years: int = 10) -> pd.DataFrame:
 
 def safe_filename(name: str) -> str:
     return "".join(c for c in name if c not in '<>:"/\\|?*').strip()
+
+
+def read_existing_csv(path: Path) -> pd.DataFrame:
+    """Read an existing CSV file as a Date-indexed DataFrame if it exists."""
+    if not path.exists():
+        return pd.DataFrame()
+    try:
+        df = pd.read_csv(path, index_col="Date", parse_dates=True)
+        return df.sort_index()
+    except Exception:
+        return pd.DataFrame()
+
+
+def trim_tail(df: pd.DataFrame, n_rows: int = 10) -> pd.DataFrame:
+    """Trim the last n_rows from a DataFrame as a safety buffer for incremental updates."""
+    if df.empty or len(df) <= n_rows:
+        return pd.DataFrame()
+    return df.iloc[:-n_rows].copy()
+
+
+def merge_incremental(old_df: pd.DataFrame, new_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Merge old existing DataFrame with newly fetched DataFrame.
+    New rows overwrite old rows on date overlap.
+    """
+    if old_df.empty:
+        return new_df.sort_index() if not new_df.empty else new_df
+    if new_df.empty:
+        return old_df.sort_index()
+
+    combined = pd.concat([old_df, new_df])
+    combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+    return combined
+

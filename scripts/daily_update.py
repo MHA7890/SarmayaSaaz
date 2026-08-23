@@ -303,7 +303,7 @@ def main() -> int:
         selected = [n for n in selected if n not in drop]
 
     log_path = setup_logging(args.verbose)
-    started = datetime.now()
+    started = time.monotonic()
     logger.info("=" * 78)
     logger.info("Daily update starting - classes: %s", ", ".join(selected) or "(none)")
     logger.info("Log file: %s", log_path)

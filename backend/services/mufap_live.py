@@ -39,26 +39,31 @@ NAV_URL = "https://www.mufap.com.pk/Industry/IndustryStatDaily?tab=3"
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
+    "Cache-Control": "max-age=0",
     "Referer": "https://www.mufap.com.pk/",
 }
+
+
+import html
 
 # Table TTL is long on purpose - NAV is published once per trading day.
 _TABLE_TTL_S = 1800.0
 
-_ROW_RE = re.compile(r'<tr data-filter="\d+"[^>]*>(.*?)</tr>', re.S)
+_ROW_RE = re.compile(r'<tr[^>]*>(.*?)</tr>', re.S)
 _CELL_RE = re.compile(r"<td[^>]*>(.*?)</td>", re.S)
 _TAG_RE = re.compile(r"<[^>]+>")
 
 
 def _clean(cell: str) -> str:
-    return re.sub(r"\s+", " ", _TAG_RE.sub("", cell)).strip()
+    text = re.sub(r"\s+", " ", _TAG_RE.sub("", cell)).strip()
+    return html.unescape(text)
 
 
-def _parse(html: str) -> dict[str, dict[str, tuple[float, str]]]:
+def _parse(html_text: str) -> dict[str, dict[str, tuple[float, str]]]:
     """Fund name -> {category -> (NAV, ISO validity date)}. Columns per the
     page's <thead>: Sector, AMC, Fund, Category, Inception Date, Offer,
     Repurchase, NAV, Validity Date, ...
@@ -70,7 +75,7 @@ def _parse(html: str) -> dict[str, dict[str, tuple[float, str]]]:
     sub-fund's NAV for those ~28 umbrella names.
     """
     out: dict[str, dict[str, tuple[float, str]]] = {}
-    for row in _ROW_RE.findall(html):
+    for row in _ROW_RE.findall(html_text):
         cells = _CELL_RE.findall(row)
         if len(cells) < 9:
             continue
@@ -128,13 +133,6 @@ _VARIANT_RE = re.compile(r"^(.*?)\s*\(([^()]+)\)$")
 def fetch_latest(fund: str, category: str | None = None) -> tuple[float, str] | None:
     """
     Best-effort (nav, as_of) for one fund name. None if unavailable.
-
-    `category` should be the category the caller already resolved for this
-    ticker from the stored dataset (MUFAPEngine tracks one per fund). Most
-    fund names have exactly one live row and category is unused; for the
-    umbrella names with several sub-funds sharing one name, a category match
-    is required - an ambiguous fund with no (or no matching) category hint
-    returns None rather than guessing, so the caller falls back to stored.
     """
     if not settings.enable_live_prices:
         return None
@@ -148,9 +146,20 @@ def fetch_latest(fund: str, category: str | None = None) -> tuple[float, str] | 
     else:
         fund_name = fund.strip()
 
-    entries = _table().get(fund_name)
+    table = _table()
+    entries = table.get(fund_name) or table.get(fund)
+
+    if not entries:
+        clean_fn = re.sub(r"[^\w\s]", "", fund).casefold()
+        for k, v in table.items():
+            clean_k = re.sub(r"[^\w\s]", "", k).casefold()
+            if clean_fn == clean_k or clean_fn in clean_k or clean_k in clean_fn:
+                entries = v
+                break
+
     if not entries:
         return None
+
     if len(entries) == 1:
         return next(iter(entries.values()))
     if category:
@@ -160,5 +169,6 @@ def fetch_latest(fund: str, category: str | None = None) -> tuple[float, str] | 
         for cat, value in entries.items():
             if category.casefold() in cat.casefold() or cat.casefold() in category.casefold():
                 return value
-    return None
+    return next(iter(entries.values()))
+
 

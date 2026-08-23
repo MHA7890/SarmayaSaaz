@@ -168,10 +168,6 @@ def merge_live_table_navs() -> int:
     """Supplement historical API calls with latest live NAVs published on MUFAP's industry table."""
     try:
         from backend.services import mufap_live
-        table = mufap_live._table()
-        if not table:
-            return 0
-
         merged_count = 0
         for out_path in OUT_DIR.glob("*.csv"):
             try:
@@ -180,24 +176,8 @@ def merge_live_table_navs() -> int:
                     continue
                 max_d = df.index.max()
                 filename = out_path.stem
-                match_rgx = re.match(r"^(.*?)\s*\(([^()]+)\)$", filename)
-                fund = match_rgx.group(1).strip() if match_rgx else filename
-                cat = match_rgx.group(2).strip() if match_rgx else None
 
-                entries = table.get(fund, {})
-                match = None
-                if len(entries) == 1:
-                    match = list(entries.values())[0]
-                elif cat and entries:
-                    for c, val in entries.items():
-                        if c.casefold() == cat.casefold() or cat.casefold() in c.casefold():
-                            match = val
-                            break
-                if not match and entries:
-                    for c, val in entries.items():
-                        match = val
-                        break
-
+                match = mufap_live.fetch_latest(filename)
                 if match:
                     nav, as_of = match
                     as_of_dt = pd.Timestamp(as_of)
@@ -213,6 +193,7 @@ def merge_live_table_navs() -> int:
     except Exception as e:
         logger.warning(f"Could not merge live MUFAP industry table: {e}")
         return 0
+
 
 
 def run(target_names=None):

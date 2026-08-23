@@ -36,20 +36,11 @@ export function isMarketClosed(assetClass: string): boolean {
   const utcMinutes = utcHour * 60 + now.getUTCMinutes();
   const ac = (assetClass || "").toLowerCase();
 
-
   if (ac === "stock" || ac === "psx") {
     if (utcDay === 0 || utcDay === 6) return true;
     const openMinutes = 4 * 60 + 30; // 04:30 UTC (09:30 PKT)
     const closeMinutes = 10 * 60 + 30; // 10:30 UTC (15:30 PKT)
     return utcMinutes < openMinutes || utcMinutes >= closeMinutes;
-  }
-
-  if (ac === "commodity") {
-    if (utcDay === 6) return true; // Sat
-    if (utcDay === 5 && utcHour >= 21) return true; // Fri after 21:00 UTC
-    if (utcDay === 0 && utcHour < 22) return true; // Sun before 22:00 UTC
-    if (utcHour === 21) return true; // Daily 21:00-22:00 UTC break
-    return false;
   }
 
   return false;
@@ -113,7 +104,8 @@ function buildSeries(
   const start = new Date(forecast.as_of);
 
   const marketClosed = isMarketClosed(forecast.asset_class);
-  const isEligibleAsset = forecast.asset_class === "commodity" || forecast.asset_class === "stock";
+  const isEligibleAsset = forecast.asset_class === "stock";
+
   let nextOpenPrice: number | undefined;
 
   if (marketClosed && isEligibleAsset && sortedHorizons.length > 0) {

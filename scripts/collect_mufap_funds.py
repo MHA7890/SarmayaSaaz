@@ -64,10 +64,18 @@ DETAIL_URL = f"{BASE}/AMC/GetFundDetailbyAMCByDate"
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        "(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
     ),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
+    "Sec-Ch-Ua": '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
     "Referer": DIRECTORY_URL,
 }
 
@@ -77,14 +85,12 @@ CARD_RE = re.compile(r'card-title">([^<]*)<[\s\S]{0,4000}?FundID=(\d+)')
 def target_fund_names() -> list[str]:
     """Fund universe = all existing funds in data-new/mufap-data or all discovered in MUFAP."""
     if OUT_DIR.exists():
-        names = []
-        for p in OUT_DIR.glob("*.csv"):
-            stem = p.stem
-            clean = re.sub(r"\s*\([^)]*\)", "", stem).strip()
-            names.append(clean)
+        names = [p.stem for p in OUT_DIR.glob("*.csv")]
         if names:
             return sorted(set(names))
     return []
+
+
 
 
 
@@ -208,15 +214,30 @@ def run(target_names=None):
     for name in target_names:
         fund_ids = fund_map.get(name)
         if not fund_ids:
+            clean_name = re.sub(r"\s*\([^)]*\)", "", name).strip()
+            fund_ids = fund_map.get(clean_name)
+        if not fund_ids:
+            out_path = OUT_DIR / f"{safe_filename(name)}.csv"
+            if out_path.exists():
+                existing = read_existing_csv(out_path)
+                if not existing.empty:
+                    logger.info(f"  -> '{name}': utilizing existing series ({existing.index.max().date()})")
+                    ok.append(name)
+                    continue
             logger.warning(f"  -> No FundID found for '{name}'")
             failed.append(name)
             continue
+
 
         for fund_id in fund_ids:
             try:
                 category, new_df = fetch_fund_history(fund_id)
 
-                label = f"{name} ({category})" if len(fund_ids) > 1 and category else name
+                if "(" in name or len(fund_ids) <= 1 or not category:
+                    label = name
+                else:
+                    label = f"{name} ({category})"
+
                 out_path = OUT_DIR / f"{safe_filename(label)}.csv"
                 existing = read_existing_csv(out_path)
 

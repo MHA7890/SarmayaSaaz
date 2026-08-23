@@ -29,6 +29,7 @@ _SYNC_STATUS: dict[str, str | bool | int] = {
     "current_step": "Idle",
     "step": "Idle",
     "progress": 0,
+    "started_at": "",
     "updated_at": "",
 }
 
@@ -59,12 +60,23 @@ def get_sync_status() -> dict[str, str | bool | int]:
 def set_sync_status(is_syncing: bool, step: str = "Idle", progress: int = 0) -> None:
     global _SYNC_STATUS
     now_iso = datetime.now(timezone.utc).isoformat()
+    
+    # Maintain started_at across step updates during a single sync run
+    existing_status = get_sync_status()
+    if is_syncing:
+        started_at = existing_status.get("started_at") if existing_status.get("is_syncing") else now_iso
+        if not started_at:
+            started_at = now_iso
+    else:
+        started_at = ""
+
     _SYNC_STATUS["is_syncing"] = is_syncing
     _SYNC_STATUS["current_step"] = step
     _SYNC_STATUS["step"] = step
     _SYNC_STATUS["progress"] = progress
+    _SYNC_STATUS["started_at"] = started_at
     _SYNC_STATUS["updated_at"] = now_iso
-    logger.info("[SyncStatus] is_syncing=%s | progress=%d%% | step='%s'", is_syncing, progress, step)
+    logger.info("[SyncStatus] is_syncing=%s | progress=%d%% | step='%s' | started_at='%s'", is_syncing, progress, step, started_at)
 
     try:
         settings.data_ready_dir.mkdir(parents=True, exist_ok=True)

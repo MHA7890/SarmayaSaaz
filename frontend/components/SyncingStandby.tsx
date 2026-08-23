@@ -9,6 +9,7 @@ import logoLight from "@/public/logo-light.png";
 interface SyncingStandbyProps {
   progress?: number;
   currentStep?: string;
+  startedAt?: string;
   onRefreshFinished?: () => void;
   isDemoMode?: boolean;
 }
@@ -24,6 +25,7 @@ const SYNC_STEPS = [
 export function SyncingStandby({
   progress: externalProgress,
   currentStep: externalStep,
+  startedAt,
   onRefreshFinished,
   isDemoMode = false,
 }: SyncingStandbyProps) {
@@ -31,13 +33,24 @@ export function SyncingStandby({
   const [activeStepIndex, setActiveStepIndex] = useState(1);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Unconditional elapsed timer
+  // Real server-based elapsed timer
   useEffect(() => {
-    const timer = setInterval(() => {
+    const updateElapsed = () => {
+      if (startedAt) {
+        const startTime = new Date(startedAt).getTime();
+        if (!isNaN(startTime) && startTime > 0) {
+          const secs = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+          setElapsedSeconds(secs);
+          return;
+        }
+      }
       setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
+    };
+
+    updateElapsed();
+    const timer = setInterval(updateElapsed, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [startedAt]);
 
   // Demo loop if running in standalone preview or demo mode
   useEffect(() => {

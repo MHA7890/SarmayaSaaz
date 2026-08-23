@@ -46,6 +46,27 @@ DEFAULT_TIMEOUT_S = 3600
 NEWS_TIMEOUT_S = 4 * 3600
 
 
+def notify_sync_status(api_url: str | None, is_syncing: bool, current_step: str, progress: int) -> None:
+    """Send sync status update to backend service if reachable."""
+    if not api_url:
+        api_url = "http://127.0.0.1:8000"
+    try:
+        import requests
+        endpoint = f"{api_url.rstrip('/')}/api/system/sync-status"
+        requests.post(
+            endpoint,
+            json={
+                "is_syncing": is_syncing,
+                "current_step": current_step,
+                "progress": progress,
+            },
+            timeout=3,
+        )
+    except Exception:
+        pass
+
+
+
 @dataclass
 class Step:
     name: str

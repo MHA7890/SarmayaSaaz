@@ -31,13 +31,17 @@ export function SyncingStandby({
   const [activeStepIndex, setActiveStepIndex] = useState(1);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Demo loop if running in standalone preview or demo mode
+  // Unconditional elapsed timer
   useEffect(() => {
-    if (!isDemoMode && externalProgress !== undefined) return;
-
     const timer = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
     }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Demo loop if running in standalone preview or demo mode
+  useEffect(() => {
+    if (!isDemoMode && externalProgress !== undefined) return;
 
     const progressTimer = setInterval(() => {
       setInternalProgress((prev) => {
@@ -55,7 +59,6 @@ export function SyncingStandby({
     }, 1200);
 
     return () => {
-      clearInterval(timer);
       clearInterval(progressTimer);
     };
   }, [isDemoMode, externalProgress, onRefreshFinished]);
@@ -175,7 +178,9 @@ export function SyncingStandby({
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block" />
                 <span className="text-[10px] text-slate-500 ml-2">SYSTEM EXECUTION STREAM</span>
               </div>
-              <span className="text-[10px] text-indigo-400/80">{elapsedSeconds}s elapsed</span>
+            <span className="text-[10px] text-indigo-400/80">
+                {Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s elapsed
+              </span>
             </div>
 
             {/* Log Stream List */}
@@ -219,7 +224,7 @@ export function SyncingStandby({
           <div className="text-center pt-1 space-y-1">
             <p className="text-xs text-slate-400">
               The platform is temporarily locked while fresh market data & predictions synchronize.
-              This usually takes under 30 seconds.
+              Access will automatically resume when update completes.
             </p>
           </div>
 

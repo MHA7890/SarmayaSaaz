@@ -46,6 +46,7 @@ import sys
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -317,24 +318,32 @@ def run(only: list[str] | None = None) -> int:
     logger.info(f"Collecting news for {len(universe)} assets -> {OUT_DIR}")
     ok, empty, failed = [], [], []
 
-    for i, (ticker, name, asset_class) in enumerate(universe, 1):
+    def _process_one(item):
+        i, (ticker, name, asset_class) = item
         try:
             df = collect_asset(ticker, name, asset_class)
             if df.empty:
-                logger.warning(f"  [{i}/{len(universe)}] {ticker}: no headlines found")
-                empty.append(ticker)
-                continue
+                return "empty", ticker, f"[{i}/{len(universe)}] {ticker}: no headlines found"
             dest = OUT_DIR / asset_class
             dest.mkdir(parents=True, exist_ok=True)
             df.to_csv(dest / f"{ticker}.csv", index=False)
-            logger.info(
-                f"  [{i}/{len(universe)}] {ticker}: {len(df)} headlines "
-                f"({df['Date'].min()} -> {df['Date'].max()})"
-            )
-            ok.append(ticker)
+            return "ok", ticker, f"[{i}/{len(universe)}] {ticker}: {len(df)} headlines ({df['Date'].min()} -> {df['Date'].max()})"
         except Exception as e:
-            logger.error(f"  [{i}/{len(universe)}] FAILED {ticker}: {e}")
-            failed.append(ticker)
+            return "failed", ticker, f"[{i}/{len(universe)}] FAILED {ticker}: {e}"
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(_process_one, (i, u)) for i, u in enumerate(universe, 1)]
+        for f in as_completed(futures):
+            status, ticker, msg = f.result()
+            if status == "ok":
+                logger.info(f"  {msg}")
+                ok.append(ticker)
+            elif status == "empty":
+                logger.warning(f"  {msg}")
+                empty.append(ticker)
+            else:
+                logger.error(f"  {msg}")
+                failed.append(ticker)
 
     fund_written = fund_failed = 0
     if do_funds:

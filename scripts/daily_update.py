@@ -313,102 +313,9 @@ def main() -> int:
     results: list[tuple[str, bool, float, str]] = []
     total_classes = len(selected)
 
-    for idx, cls in enumerate([c for c in CLASSES if c.name in selected]):
-        step_progress = 10 + int((idx / max(1, total_classes)) * 70)
-        notify_sync_status(args.api_url, True, f"Updating {cls.name} daily bars & features...", step_progress)
-
-        steps: list[Step] = []
-        if not args.skip_collect:
-            steps.append(Step(f"{cls.name}:collect", cls.collect))
-        if not args.skip_features:
-            steps.append(Step(f"{cls.name}:features", cls.features))
-
-        for step in steps:
-            logger.info("-> %s", step.name)
-            ok, secs, detail = run_step(step, args.timeout)
-            results.append((step.name, ok, secs, detail))
-            if ok:
-                logger.info("   done in %.1fs", secs)
-            else:
-                logger.error("   FAILED after %.1fs: %s", secs, detail)
-                # Deliberately NOT skipping features here. A collect that loses
-                # a few symbols out of many is the common case - PSX came back
-                # 94/97 - and refusing to build features then leaves *every*
-                # asset in the class frozen to punish three. Feature
-                # engineering is idempotent and reads whatever is on disk, so
-                # running it publishes the 94 that did update. The collect
-                # failure still stands in `results`, so the run exits non-zero,
-                # and the per-asset freshness check below names exactly which
-                # assets are behind.
-
-    if not args.skip_news:
-        # Chart catalyst markers. Independent of the price pipeline: a failure
-        # here costs markers on the chart, not prices or forecasts.
-        logger.info("-> news:collect")
-        # Its own ceiling: this walks 123 assets x ~6 windowed queries with
-        # retries, which ran ~75s per asset against a flaky Google - well past
-        # the per-step default. Timing it out mid-way would leave a partial
-        # archive and no markers for the assets it never reached.
-        ok, secs, detail = run_step(
-            Step("news:collect", ROOT / "scripts" / "collect_news.py"),
-            max(args.timeout, NEWS_TIMEOUT_S),
-        )
-        results.append(("news:collect", ok, secs, detail))
-        logger.info("   done in %.1fs", secs) if ok else logger.error("   FAILED: %s", detail)
-
-    if not args.skip_snapshot:
-        notify_sync_status(args.api_url, True, "Rebuilding universe snapshot & predictions...", 90)
-        logger.info("-> snapshot:rebuild")
-        ok, secs, detail = run_step(Step("snapshot:rebuild", ROOT / "scripts" / "build_snapshot.py"), args.timeout)
-        results.append(("snapshot:rebuild", ok, secs, detail))
-        logger.info("   done in %.1fs", secs) if ok else logger.error("   FAILED: %s", detail)
-
-    # -- tell a running API to re-read what we just wrote ----------------
-    if not args.skip_reload:
-        try:
-            import urllib.request
-
-            req = urllib.request.Request(f"{args.api_url}/api/data/reload", method="POST")
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                payload = json.load(resp)
-            logger.info(
-                "-> notified API at %s (caches cleared: %s)",
-                args.api_url, payload.get("caches_cleared"),
-            )
-        except Exception as e:  # noqa: BLE001 - a down backend is not a failure
-            logger.info("-> no running API to notify at %s (%s)", args.api_url, type(e).__name__)
-
-    # Mark sync as completed & unlock site
-    notify_sync_status(args.api_url, False, "Completed", 100)
-
-    # -- report ---------------------------------------------------------
-    failed = [r for r in results if not r[1]]
-    logger.info("=" * 78)
-    logger.info("Freshness after this run (assets current / total @ newest date):")
-    logger.info("  %-13s %-26s %-26s", "class", "display", "model input")
-
-    # A step can exit 0 and still leave data stale - a source serves a cached
-    # page, a symbol fails inside a loop that swallows it, an optional import
-    # is missing. So what actually landed on disk is checked independently,
-    # per asset, and any shortfall fails the run on its own.
-    today = pd.Timestamp.now().normalize()
-    for cls in [c for c in CLASSES if c.name in selected]:
-        disp = scan_freshness(cls.display_glob) if cls.display_glob else Freshness()
-        model = scan_freshness(cls.model_glob) if cls.model_glob else Freshness()
-
-        logger.info(
-            "  %-13s %-26s %-26s%s",
-            cls.name,
-            f"{disp.current}/{disp.total} @ {disp.newest_str}",
-            f"{model.current}/{model.total} @ {model.newest_str}",
-            f"   ({cls.note})" if cls.note else "",
-        )
-
     try:
-        notify_sync_status(args.api_url, True, "Initializing data procurement...", 10)
-
         for idx, cls in enumerate([c for c in CLASSES if c.name in selected]):
-            step_progress = 10 + int((idx / max(1, total_classes)) * 70)
+            step_progress = 10 + int(((idx + 1) / max(1, total_classes)) * 70)
             notify_sync_status(args.api_url, True, f"Updating {cls.name} daily bars & features...", step_progress)
 
             steps: list[Step] = []
@@ -426,19 +333,10 @@ def main() -> int:
                 else:
                     logger.error("   FAILED after %.1fs: %s", secs, detail)
 
-        if not args.skip_news:
-            notify_sync_status(args.api_url, True, "Refreshing market news & sentiment...", 85)
-            logger.info("-> news:collect")
-            ok, secs, detail = run_step(
-                Step("news:collect", ROOT / "scripts" / "collect_news.py", optional=True),
-                NEWS_TIMEOUT_S,
-            )
-            results.append(("news:collect", ok, secs, detail))
-
         if not args.skip_snapshot:
             notify_sync_status(args.api_url, True, "Rebuilding whole-universe forecast snapshot...", 90)
             logger.info("-> snapshot:rebuild")
-            started = time.monotonic()
+            started_snap = time.monotonic()
             try:
                 if str(ROOT) not in sys.path:
                     sys.path.insert(0, str(ROOT))
@@ -446,73 +344,98 @@ def main() -> int:
                 from backend.services.snapshot import snapshot
                 engines.load_all()
                 snapshot.build(progress=False)
-                secs = time.monotonic() - started
+                secs = time.monotonic() - started_snap
                 logger.info("   done in %.1fs", secs)
                 results.append(("snapshot:rebuild", True, secs, ""))
             except Exception as e:
-                secs = time.monotonic() - started
+                secs = time.monotonic() - started_snap
                 logger.error("   FAILED after %.1fs: %s", secs, e)
                 results.append(("snapshot:rebuild", False, secs, str(e)))
 
-        # Freshness verification pass
-        logger.info("=" * 78)
-        logger.info("Verifying post-update freshness against %s", today.date())
-        for cls in [c for c in CLASSES if c.name in selected]:
-            disp = scan_freshness(cls.display_glob)
-            model = scan_freshness(cls.model_glob)
-
-
-            for layer, f in (("display", disp), ("model inputs", model)):
-                if f.newest is None:
-                    logger.error("     %s: no CSV files found under %s", layer, f.glob)
-                    results.append((f"{cls.name}:{layer}", False, 0.0, "no data files"))
-                    continue
-
-                age = (today - f.newest).days
-                if age > args.max_age_days:
-                    results.append((f"{cls.name}:{layer}", False, 0.0, f"newest is {age}d old ({f.newest_str})"))
-
-                if cls.per_asset_max_age_days is not None:
-                    stale = {n: d for n, d in f.per_asset.items()
-                             if (today - d).days > cls.per_asset_max_age_days}
-                    if stale:
-                        shown = sorted(stale.items(), key=lambda kv: kv[1])[:6]
-                        detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
-                        if len(stale) > len(shown):
-                            detail += f", +{len(stale) - len(shown)} more"
-                        logger.error("     %s: %d asset(s) older than %dd -> %s",
-                                     layer, len(stale), cls.per_asset_max_age_days, detail)
-                        results.append((f"{cls.name}:{layer}", False, 0.0,
-                                        f"{len(stale)} asset(s) older than {cls.per_asset_max_age_days}d"))
-                    continue
-
-                if len(f.lagging) > args.allow_lagging:
-                    shown = sorted(f.lagging.items(), key=lambda kv: kv[1])[:6]
-                    detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
-                    if len(f.lagging) > len(shown):
-                        detail += f", +{len(f.lagging) - len(shown)} more"
-                    logger.error("     %s: %d asset(s) behind %s -> %s", layer, len(f.lagging), f.newest_str, detail)
-                    results.append((f"{cls.name}:{layer}", False, 0.0, f"{len(f.lagging)} asset(s) behind {f.newest_str}"))
-
-            if (cls.model_checks and disp.newest is not None and model.newest is not None
-                    and model.newest < disp.newest):
-                behind = (disp.newest - model.newest).days
-                logger.error(
-                    "     model inputs are %dd behind display (%s vs %s) - features did not complete",
-                    behind, model.newest_str, disp.newest_str,
-                )
-                results.append((
-                    f"{cls.name}:features-lag", False, 0.0,
-                    f"model inputs at {model.newest_str} vs display {disp.newest_str}",
-                ))
-    finally:
-        notify_sync_status(args.api_url, False, "Complete", 100)
         if not args.skip_reload:
             try:
-                import requests
-                requests.post(f"{args.api_url.rstrip('/')}/api/data/reload", timeout=5)
-            except Exception:
-                pass
+                import urllib.request
+                req = urllib.request.Request(f"{args.api_url}/api/data/reload", method="POST")
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    payload = json.load(resp)
+                logger.info("-> notified API at %s (caches cleared: %s)", args.api_url, payload.get("caches_cleared"))
+            except Exception as e:  # noqa: BLE001
+                logger.info("-> no running API to notify at %s (%s)", args.api_url, type(e).__name__)
+
+    finally:
+        # UNLOCK THE SITE IMMEDIATELY once predictions & market data are built!
+        notify_sync_status(args.api_url, False, "Completed", 100)
+
+    # Refresh news markers in background after the site is already unlocked and operational
+    if not args.skip_news:
+        logger.info("-> news:collect (background refresh)")
+        ok, secs, detail = run_step(
+            Step("news:collect", ROOT / "scripts" / "collect_news.py"),
+            NEWS_TIMEOUT_S,
+        )
+        results.append(("news:collect", ok, secs, detail))
+        logger.info("   done in %.1fs", secs) if ok else logger.error("   FAILED: %s", detail)
+
+    # -- report ---------------------------------------------------------
+    failed = [r for r in results if not r[1]]
+    logger.info("=" * 78)
+    logger.info("Freshness after this run (assets current / total @ newest date):")
+    logger.info("  %-13s %-26s %-26s", "class", "display", "model input")
+
+    today = pd.Timestamp.now().normalize()
+    for cls in [c for c in CLASSES if c.name in selected]:
+        disp = scan_freshness(cls.display_glob) if cls.display_glob else Freshness()
+        model = scan_freshness(cls.model_glob) if cls.model_glob else Freshness()
+
+        logger.info(
+            "  %-13s %-26s %-26s%s",
+            cls.name,
+            f"{disp.current}/{disp.total} @ {disp.newest_str}",
+            f"{model.current}/{model.total} @ {model.newest_str}",
+            f"   ({cls.note})" if cls.note else "",
+        )
+
+        for layer, f in (("display", disp), ("model inputs", model)):
+            if f.newest is None:
+                continue
+
+            age = (today - f.newest).days
+            if age > args.max_age_days:
+                results.append((f"{cls.name}:{layer}", False, 0.0, f"newest is {age}d old ({f.newest_str})"))
+
+            if cls.per_asset_max_age_days is not None:
+                stale = {n: d for n, d in f.per_asset.items()
+                         if (today - d).days > cls.per_asset_max_age_days}
+                if stale:
+                    shown = sorted(stale.items(), key=lambda kv: kv[1])[:6]
+                    detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
+                    if len(stale) > len(shown):
+                        detail += f", +{len(stale) - len(shown)} more"
+                    logger.error("     %s: %d asset(s) older than %dd -> %s",
+                                 layer, len(stale), cls.per_asset_max_age_days, detail)
+                    results.append((f"{cls.name}:{layer}", False, 0.0,
+                                    f"{len(stale)} asset(s) older than {cls.per_asset_max_age_days}d"))
+                continue
+
+            if len(f.lagging) > args.allow_lagging:
+                shown = sorted(f.lagging.items(), key=lambda kv: kv[1])[:6]
+                detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
+                if len(f.lagging) > len(shown):
+                    detail += f", +{len(f.lagging) - len(shown)} more"
+                logger.error("     %s: %d asset(s) behind %s -> %s", layer, len(f.lagging), f.newest_str, detail)
+                results.append((f"{cls.name}:{layer}", False, 0.0, f"{len(f.lagging)} asset(s) behind {f.newest_str}"))
+
+        if (cls.model_checks and disp.newest is not None and model.newest is not None
+                and model.newest < disp.newest):
+            behind = (disp.newest - model.newest).days
+            logger.error(
+                "     model inputs are %dd behind display (%s vs %s) - features did not complete",
+                behind, model.newest_str, disp.newest_str,
+            )
+            results.append((
+                f"{cls.name}:features-lag", False, 0.0,
+                f"model inputs at {model.newest_str} vs display {disp.newest_str}",
+            ))
 
     failed = [r for r in results if not r[1]]
 

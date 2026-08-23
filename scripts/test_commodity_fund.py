@@ -4,12 +4,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from backend.engines.mufap import mufap_engine
+from backend.engines.mufap import MUFAPEngine
 
 def test():
+    engine = MUFAPEngine()
     ticker = "UBL Retirement Saving Fund (VPS-Commodities  Gold)"
     print("Testing ticker:", ticker)
-    fc = mufap_engine.forecast(ticker)
+    fc = engine.forecast(ticker)
     print("SUCCESS!")
     print("Ticker:", fc.ticker)
     print("Current Price:", fc.current_price)

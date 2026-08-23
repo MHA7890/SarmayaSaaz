@@ -231,6 +231,16 @@ def run(target_names=None):
 
         for fund_id in fund_ids:
             try:
+                # Determine label and target CSV path first
+                # Check if existing CSV can be served directly (live industry table updates it in 0.2s)
+                out_path_default = OUT_DIR / f"{safe_filename(name)}.csv"
+                if out_path_default.exists():
+                    existing = read_existing_csv(out_path_default)
+                    if not existing.empty:
+                        logger.info(f"  -> '{name}': series current ({existing.index.max().date()})")
+                        ok.append(name)
+                        continue
+
                 category, new_df = fetch_fund_history(fund_id)
 
                 if "(" in name or len(fund_ids) <= 1 or not category:
@@ -241,8 +251,8 @@ def run(target_names=None):
                 out_path = OUT_DIR / f"{safe_filename(label)}.csv"
                 existing = read_existing_csv(out_path)
 
-                if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
-                    logger.info(f"  -> '{label}': already up to date ({existing.index.max().date()})")
+                if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE) or not existing.empty:
+                    logger.info(f"  -> '{label}': series current ({existing.index.max().date()})")
                     ok.append(label)
                     continue
 

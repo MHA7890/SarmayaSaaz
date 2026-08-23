@@ -54,11 +54,11 @@ def binance_symbol(ticker: str) -> str:
     return SYMBOL_OVERRIDES.get(ticker, f"{ticker}USDT")
 
 
-def _get_with_retry(url: str, params: dict, retries: int = 4):
+def _get_with_retry(url: str, params: dict, retries: int = 1):
     last_err = None
     for attempt in range(retries):
         try:
-            resp = requests.get(url, params=params, timeout=20)
+            resp = requests.get(url, params=params, timeout=4)
             if resp.status_code != 200:
                 raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:200]}")
             data = resp.json()
@@ -69,8 +69,9 @@ def _get_with_retry(url: str, params: dict, retries: int = 4):
             return data
         except Exception as e:
             last_err = e
-            time.sleep(1.5 * (attempt + 1))
+            time.sleep(0.5)
     raise last_err
+
 
 
 def fetch_klines(symbol: str, start_ms: int, end_ms: int) -> list[list]:

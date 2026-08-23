@@ -17,29 +17,56 @@ from pathlib import Path
 
 import pandas as pd
 
-from backend.config import settings
-
-logger = logging.getLogger("sarmayasaaz.auto_update")
+STATUS_FILE = settings.data_ready_dir / ".sync_status.json"
 
 _SYNC_STATUS: dict[str, str | bool | int] = {
     "is_syncing": False,
     "current_step": "Idle",
+    "step": "Idle",
     "progress": 0,
     "updated_at": "",
 }
 
 
 def get_sync_status() -> dict[str, str | bool | int]:
+    """Read current sync status from persistent status file or memory."""
+    if STATUS_FILE.exists():
+        try:
+            content = json.loads(STATUS_FILE.read_text(encoding="utf-8"))
+            if isinstance(content, dict):
+                updated_at_str = content.get("updated_at", "")
+                if updated_at_str:
+                    try:
+                        updated_at = datetime.fromisoformat(updated_at_str)
+                        # Auto-expire stale sync lock if older than 45 minutes (2700s)
+                        if (datetime.now(timezone.utc) - updated_at).total_seconds() > 2700:
+                            set_sync_status(is_syncing=False, step="Idle", progress=0)
+                            return _SYNC_STATUS.copy()
+                    except Exception:
+                        pass
+                content["step"] = content.get("current_step", content.get("step", "Updating data..."))
+                return content
+        except Exception:
+            pass
     return _SYNC_STATUS.copy()
 
 
 def set_sync_status(is_syncing: bool, step: str = "Idle", progress: int = 0) -> None:
     global _SYNC_STATUS
+    now_iso = datetime.now(timezone.utc).isoformat()
     _SYNC_STATUS["is_syncing"] = is_syncing
     _SYNC_STATUS["current_step"] = step
+    _SYNC_STATUS["step"] = step
     _SYNC_STATUS["progress"] = progress
-    _SYNC_STATUS["updated_at"] = datetime.now(timezone.utc).isoformat()
+    _SYNC_STATUS["updated_at"] = now_iso
     logger.info("[SyncStatus] is_syncing=%s | progress=%d%% | step='%s'", is_syncing, progress, step)
+
+    try:
+        settings.data_ready_dir.mkdir(parents=True, exist_ok=True)
+        STATUS_FILE.write_text(json.dumps(_SYNC_STATUS, indent=2), encoding="utf-8")
+    except Exception as e:
+        logger.warning("[SyncStatus] Could not write status file: %s", e)
+
 
 
 

@@ -46,8 +46,24 @@ DEFAULT_TIMEOUT_S = 3600
 NEWS_TIMEOUT_S = 4 * 3600
 
 
+STATUS_FILE = ROOT / "data-ready" / ".sync_status.json"
+
+
 def notify_sync_status(api_url: str | None, is_syncing: bool, current_step: str, progress: int) -> None:
-    """Send sync status update to backend service if reachable."""
+    """Update disk status file directly AND notify running API endpoint."""
+    status_data = {
+        "is_syncing": is_syncing,
+        "current_step": current_step,
+        "step": current_step,
+        "progress": progress,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+        STATUS_FILE.write_text(json.dumps(status_data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
     if not api_url:
         api_url = "http://127.0.0.1:8000"
     try:
@@ -55,15 +71,12 @@ def notify_sync_status(api_url: str | None, is_syncing: bool, current_step: str,
         endpoint = f"{api_url.rstrip('/')}/api/system/sync-status"
         requests.post(
             endpoint,
-            json={
-                "is_syncing": is_syncing,
-                "current_step": current_step,
-                "progress": progress,
-            },
+            json=status_data,
             timeout=3,
         )
     except Exception:
         pass
+
 
 
 
@@ -391,60 +404,101 @@ def main() -> int:
             f"   ({cls.note})" if cls.note else "",
         )
 
-        layers = [("display", disp)]
-        if cls.model_checks:
-            layers.append(("model-input", model))
+    try:
+        notify_sync_status(args.api_url, True, "Initializing data procurement...", 10)
 
-        for layer, f in layers:
-            if f.newest is None:
-                continue
-            # Absolute staleness: the whole class is behind.
-            age = (today - f.newest).days
-            if age > args.max_age_days:
-                results.append((f"{cls.name}:{layer}", False, 0.0, f"newest is {age}d old ({f.newest_str})"))
+        for idx, cls in enumerate([c for c in CLASSES if c.name in selected]):
+            step_progress = 10 + int((idx / max(1, total_classes)) * 70)
+            notify_sync_status(args.api_url, True, f"Updating {cls.name} daily bars & features...", step_progress)
 
-            if cls.per_asset_max_age_days is not None:
-                # Judge each asset on its own age - the right test when the
-                # source publishes per-asset on its own schedule.
-                stale = {n: d for n, d in f.per_asset.items()
-                         if (today - d).days > cls.per_asset_max_age_days}
-                if stale:
-                    shown = sorted(stale.items(), key=lambda kv: kv[1])[:6]
-                    detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
-                    if len(stale) > len(shown):
-                        detail += f", +{len(stale) - len(shown)} more"
-                    logger.error("     %s: %d asset(s) older than %dd -> %s",
-                                 layer, len(stale), cls.per_asset_max_age_days, detail)
-                    results.append((f"{cls.name}:{layer}", False, 0.0,
-                                    f"{len(stale)} asset(s) older than {cls.per_asset_max_age_days}d"))
-                continue
+            steps: list[Step] = []
+            if not args.skip_collect:
+                steps.append(Step(f"{cls.name}:collect", cls.collect))
+            if not args.skip_features:
+                steps.append(Step(f"{cls.name}:features", cls.features))
 
-            # Relative staleness: some assets moved and others did not. This is
-            # the signal that catches a partial failure the exit code missed.
-            if len(f.lagging) > args.allow_lagging:
-                shown = sorted(f.lagging.items(), key=lambda kv: kv[1])[:6]
-                detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
-                if len(f.lagging) > len(shown):
-                    detail += f", +{len(f.lagging) - len(shown)} more"
-                logger.error("     %s: %d asset(s) behind %s -> %s", layer, len(f.lagging), f.newest_str, detail)
-                results.append((f"{cls.name}:{layer}", False, 0.0, f"{len(f.lagging)} asset(s) behind {f.newest_str}"))
+            for step in steps:
+                logger.info("-> %s", step.name)
+                ok, secs, detail = run_step(step, args.timeout)
+                results.append((step.name, ok, secs, detail))
+                if ok:
+                    logger.info("   done in %.1fs", secs)
+                else:
+                    logger.error("   FAILED after %.1fs: %s", secs, detail)
 
-        # The model-input layer is built *from* the display layer, so it can
-        # never legitimately be older. When it is, feature engineering did not
-        # run or did not finish - and because every asset lags equally, the
-        # per-asset check above sees a uniform (and so apparently healthy)
-        # class. Comparing the two layers is what catches it.
-        if (cls.model_checks and disp.newest is not None and model.newest is not None
-                and model.newest < disp.newest):
-            behind = (disp.newest - model.newest).days
-            logger.error(
-                "     model inputs are %dd behind display (%s vs %s) - features did not complete",
-                behind, model.newest_str, disp.newest_str,
+        if not args.skip_news:
+            notify_sync_status(args.api_url, True, "Refreshing market news & sentiment...", 85)
+            logger.info("-> news:collect")
+            ok, secs, detail = run_step(
+                Step("news:collect", ROOT / "scripts" / "collect_news.py", optional=True),
+                NEWS_TIMEOUT_S,
             )
-            results.append((
-                f"{cls.name}:features-lag", False, 0.0,
-                f"model inputs at {model.newest_str} vs display {disp.newest_str}",
-            ))
+            results.append(("news:collect", ok, secs, detail))
+
+        if not args.skip_snapshot:
+            notify_sync_status(args.api_url, True, "Rebuilding whole-universe forecast snapshot...", 90)
+            logger.info("-> snapshot:build")
+            ok, secs, detail = run_step(Step("snapshot:build", ROOT / "scripts" / "build_snapshot.py"))
+            results.append(("snapshot:build", ok, secs, detail))
+
+        # Freshness verification pass
+        logger.info("=" * 78)
+        logger.info("Verifying post-update freshness against %s", today.date())
+        for cls in [c for c in CLASSES if c.name in selected]:
+            disp = audit_freshness(cls.name, "display", cls.display_glob)
+            model = audit_freshness(cls.name, "model inputs", cls.model_glob)
+
+            for layer, f in (("display", disp), ("model inputs", model)):
+                if f.newest is None:
+                    logger.error("     %s: no CSV files found under %s", layer, f.glob)
+                    results.append((f"{cls.name}:{layer}", False, 0.0, "no data files"))
+                    continue
+
+                age = (today - f.newest).days
+                if age > args.max_age_days:
+                    results.append((f"{cls.name}:{layer}", False, 0.0, f"newest is {age}d old ({f.newest_str})"))
+
+                if cls.per_asset_max_age_days is not None:
+                    stale = {n: d for n, d in f.per_asset.items()
+                             if (today - d).days > cls.per_asset_max_age_days}
+                    if stale:
+                        shown = sorted(stale.items(), key=lambda kv: kv[1])[:6]
+                        detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
+                        if len(stale) > len(shown):
+                            detail += f", +{len(stale) - len(shown)} more"
+                        logger.error("     %s: %d asset(s) older than %dd -> %s",
+                                     layer, len(stale), cls.per_asset_max_age_days, detail)
+                        results.append((f"{cls.name}:{layer}", False, 0.0,
+                                        f"{len(stale)} asset(s) older than {cls.per_asset_max_age_days}d"))
+                    continue
+
+                if len(f.lagging) > args.allow_lagging:
+                    shown = sorted(f.lagging.items(), key=lambda kv: kv[1])[:6]
+                    detail = ", ".join(f"{n} @ {d.date()}" for n, d in shown)
+                    if len(f.lagging) > len(shown):
+                        detail += f", +{len(f.lagging) - len(shown)} more"
+                    logger.error("     %s: %d asset(s) behind %s -> %s", layer, len(f.lagging), f.newest_str, detail)
+                    results.append((f"{cls.name}:{layer}", False, 0.0, f"{len(f.lagging)} asset(s) behind {f.newest_str}"))
+
+            if (cls.model_checks and disp.newest is not None and model.newest is not None
+                    and model.newest < disp.newest):
+                behind = (disp.newest - model.newest).days
+                logger.error(
+                    "     model inputs are %dd behind display (%s vs %s) - features did not complete",
+                    behind, model.newest_str, disp.newest_str,
+                )
+                results.append((
+                    f"{cls.name}:features-lag", False, 0.0,
+                    f"model inputs at {model.newest_str} vs display {disp.newest_str}",
+                ))
+    finally:
+        notify_sync_status(args.api_url, False, "Complete", 100)
+        if not args.skip_reload:
+            try:
+                import requests
+                requests.post(f"{args.api_url.rstrip('/')}/api/data/reload", timeout=5)
+            except Exception:
+                pass
 
     failed = [r for r in results if not r[1]]
 

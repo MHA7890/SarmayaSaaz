@@ -61,7 +61,10 @@ export function SyncingStandby({
   }, [isDemoMode, externalProgress, onRefreshFinished]);
 
   const displayProgress = externalProgress !== undefined ? externalProgress : internalProgress;
-  const currentStatusStep = SYNC_STEPS[Math.min(activeStepIndex, SYNC_STEPS.length - 1)];
+  const activeIndex = externalProgress !== undefined
+    ? (displayProgress >= 90 ? 4 : displayProgress >= 75 ? 3 : displayProgress >= 50 ? 2 : displayProgress >= 25 ? 1 : 0)
+    : activeStepIndex;
+  const currentStatusStep = SYNC_STEPS[Math.min(activeIndex, SYNC_STEPS.length - 1)];
   const currentStatusText = externalStep || (currentStatusStep ? currentStatusStep.text : "Updating market data...");
 
 
@@ -178,9 +181,9 @@ export function SyncingStandby({
             {/* Log Stream List */}
             <ul className="space-y-1.5 overflow-hidden max-h-36">
               {SYNC_STEPS.map((step, idx) => {
-                const isCompleted = idx < activeStepIndex;
-                const isCurrent = idx === activeStepIndex;
-                const isPending = idx > activeStepIndex;
+                const isCompleted = idx < activeIndex;
+                const isCurrent = idx === activeIndex;
+                const isPending = idx > activeIndex;
 
                 return (
                   <li

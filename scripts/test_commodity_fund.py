@@ -1,4 +1,5 @@
 import sys
+import urllib.parse
 import requests
 from pathlib import Path
 
@@ -17,7 +18,8 @@ def test():
     print("Current Price:", fc.current_price)
 
     print("\nTesting HTTP API endpoint...")
-    url = "http://127.0.0.1:8000/api/forecasts/mutual_fund/UBL%20Retirement%20Saving%20Fund%20(VPS-Commodities%20%20Gold)"
+    encoded = urllib.parse.quote(ticker)
+    url = f"http://127.0.0.1:8000/api/forecast/{encoded}"
     r = requests.get(url)
     print("HTTP STATUS CODE:", r.status_code)
     if r.status_code == 200:

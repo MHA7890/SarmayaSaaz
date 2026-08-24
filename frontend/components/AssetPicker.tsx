@@ -82,12 +82,12 @@ export function AssetPicker({
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-full sm:w-auto">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="focus-ring flex min-w-[220px] items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 py-2 text-left"
+        className="focus-ring flex w-full sm:w-auto min-w-0 sm:min-w-[220px] items-center justify-between gap-3 rounded-lg border border-line bg-surface px-3 py-2 text-left"
       >
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold">
@@ -106,7 +106,7 @@ export function AssetPicker({
       </button>
 
       {open && (
-        <div className="absolute left-0 z-50 mt-1.5 max-h-[420px] w-[340px] overflow-hidden rounded-lg border border-line bg-surface shadow-2xl">
+        <div className="absolute left-0 sm:left-auto right-0 sm:right-auto z-50 mt-1.5 max-h-[420px] w-[calc(100vw-2rem)] max-w-[340px] sm:w-[340px] overflow-hidden rounded-lg border border-line bg-surface shadow-2xl">
           <div className="space-y-2 border-b border-line p-2">
             <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by asset class">
               {CLASS_FILTERS.map((f) => (

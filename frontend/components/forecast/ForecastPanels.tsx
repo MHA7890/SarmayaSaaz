@@ -18,10 +18,10 @@ import {
 
 export function AssetHeader({ forecast }: { forecast: Forecast }) {
   return (
-    <div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="card flex flex-col gap-4 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-xl font-bold tracking-tight text-fg max-w-full break-words">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-fg max-w-full break-words">
             {forecast.name}
           </h1>
           {forecast.asset_class !== "commodity" && (
@@ -31,14 +31,14 @@ export function AssetHeader({ forecast }: { forecast: Forecast }) {
           )}
           <span className="label shrink-0">{formatGroup(forecast.group)}</span>
         </div>
-        <div className="flex flex-wrap items-baseline gap-3">
-          <span className="num text-3xl font-bold">
+        <div className="flex flex-wrap items-baseline gap-2 sm:gap-3">
+          <span className="num text-2xl sm:text-3xl font-bold">
             {formatPrice(forecast.current_price, forecast.currency, forecast.asset_class)}
           </span>
           {forecast.change_24h_pct !== null && (
             <span
               className={cn(
-                "num text-sm font-semibold",
+                "num text-xs sm:text-sm font-semibold",
                 directionClass(forecast.change_24h_pct),
               )}
             >
@@ -211,8 +211,8 @@ export function EnsembleBreakdown({
               1e-9,
             );
             return (
-              <li key={c.model_name} className="flex items-center gap-3">
-                <span className="num w-28 shrink-0 truncate text-xs">{c.model_name}</span>
+              <li key={c.model_name} className="flex items-center gap-2 sm:gap-3">
+                <span className="num w-20 sm:w-28 shrink-0 truncate text-[11px] sm:text-xs">{c.model_name}</span>
                 <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-high">
                   <span
                     className="block h-full rounded-full bg-accent"

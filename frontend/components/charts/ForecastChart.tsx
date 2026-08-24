@@ -195,8 +195,8 @@ export function ForecastChart({
   }
 
   return (
-    <section className="card p-5" aria-label="Price history and forecast projection">
-      <header className="mb-1 flex flex-wrap items-start justify-between gap-3">
+    <section className="card p-3.5 sm:p-5" aria-label="Price history and forecast projection">
+      <header className="mb-1 flex flex-wrap items-start justify-between gap-2 sm:gap-3">
         <div>
           <h2 className="text-sm font-semibold">Price History &amp; AI Projection</h2>
           <p className="mt-0.5 text-xs text-dim">
@@ -219,7 +219,7 @@ export function ForecastChart({
       </header>
 
       {/* Legend is always present for >= 2 series */}
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-xs">
+      <div className="mb-3 flex flex-wrap items-center gap-2.5 sm:gap-4 text-xs">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-0.5 w-4 rounded" style={{ background: HISTORICAL }} />
           <span className="text-muted">Historical price</span>
@@ -244,7 +244,7 @@ export function ForecastChart({
         )}
       </div>
 
-      <div ref={containerRef} className="relative h-[320px] w-full">
+      <div ref={containerRef} className="relative h-[260px] sm:h-[320px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid

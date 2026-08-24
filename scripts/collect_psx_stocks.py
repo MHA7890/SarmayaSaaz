@@ -125,7 +125,7 @@ def run():
             out_path = OUT_DIR / f"{ticker}.csv"
             existing = read_existing_csv(out_path)
 
-            if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
+            if is_already_current(existing, tz=MARKET_TZ):
                 logger.info(f"  -> {ticker}: already up to date ({existing.index.max().date()})")
                 ok.append(ticker)
                 continue
@@ -150,9 +150,7 @@ def run():
             merged = merge_incremental(trimmed, new_df)
             df, removed = clean_ohlcv(merged, return_threshold=RETURN_THRESHOLD, adjust_stock_splits=True)
             df = clip_last_n_years(df, YEARS)
-            df, unclosed = drop_unclosed_sessions(
-                df, tz=MARKET_TZ, session_close=SESSION_CLOSE
-            )
+            df, unclosed = drop_unclosed_sessions(df, tz=MARKET_TZ)
             if unclosed:
                 logger.info(f"  -> {ticker}: dropped {unclosed} unclosed session(s)")
 

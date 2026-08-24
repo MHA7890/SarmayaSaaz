@@ -29,6 +29,7 @@ from data_new_common import (
     read_existing_csv,
     trim_tail,
 )
+from tradingview_fetch import fetch_bars
 
 logger = get_logger("collect_psx")
 
@@ -132,7 +133,15 @@ def run():
             logger.info(f"Fetching {ticker} from PSX DPS...")
             trimmed = trim_tail(existing, 10)
 
-            new_df = fetch_symbol(ticker)
+            new_df = pd.DataFrame()
+            try:
+                new_df = fetch_symbol(ticker)
+            except Exception as psx_err:
+                logger.warning(f"  -> PSX DPS failed for {ticker} ({psx_err}); trying TradingView fallback...")
+                tv_symbol = f"PSX:{ticker}"
+                n_bars = 100 if not trimmed.empty else 6000
+                new_df = fetch_bars(tv_symbol, n_bars=n_bars)
+
             if new_df.empty and trimmed.empty:
                 logger.warning(f"  -> No data returned for {ticker}")
                 failed.append(ticker)

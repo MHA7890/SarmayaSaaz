@@ -36,12 +36,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main id="main" className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6">
               {children}
             </main>
-            <footer className="mx-auto w-full max-w-[1400px] px-4 pb-10 pt-4 sm:px-6">
-              <p className="text-xs leading-relaxed text-dim">
-                Forecasts are model output, not investment advice. Figures derive from
-                historical data and may be stale; check the &ldquo;as of&rdquo; date on each
-                asset before acting on anything shown here.
-              </p>
+            <footer className="mx-auto w-full max-w-[1400px] px-4 pb-12 pt-8 sm:px-6">
+              <div className="rounded-xl border border-border/50 bg-card/40 p-4 sm:p-5 backdrop-blur-sm">
+                <p className="text-xs leading-relaxed text-dim">
+                  SarmayaSaaz provides AI-generated forecasts for informational purposes only.{" "}
+                  <strong className="font-semibold text-neutral-200">
+                    These forecasts are not financial, investment, or trading advice, and should not be relied upon as a recommendation to buy, sell, or hold any asset.
+                  </strong>{" "}
+                  Data and forecasts are based on available historical and market information, which may be delayed, incomplete, or not up to date at all times. Always verify current market data and conduct your own research before making any investment decisions.
+                </p>
+              </div>
             </footer>
           </SyncGuard>
         </Providers>

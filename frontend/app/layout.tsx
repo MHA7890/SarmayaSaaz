@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   title: "SarmayaSaaz: AI Financial Forecasting",
   description:
     "Multi horizon AI forecasts across cryptocurrencies, commodities, PSX equities and MUFAP mutual funds.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

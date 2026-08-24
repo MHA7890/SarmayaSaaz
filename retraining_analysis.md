@@ -422,3 +422,12 @@ a market regime change and I would not claim it."*
 
 *Analysis performed against `results/` and `results-new/` on 2026-08-19. Every figure is
 reproducible from the JSON metric files in those directories.*
+
+---
+
+### Addendum — Production Data Pipeline Hardening
+
+In August 2026, the live data collection and runtime pipeline was further upgraded:
+- **TradingView Fallback for PSX**: Added automatic TradingView chart websocket fallback (`PSX:<TICKER>`) to `scripts/collect_psx_stocks.py` for cloud deployment resilience against WAF HTTP 462 blocks.
+- **Strict Complete-Candle Policy**: Enforced `cutoff = today` (`df.index < today`) in `data_new_common.py` and `collect_psx_stocks.py` to strictly filter out unclosed intraday forming candles during trading sessions.
+- **24/7 UTC Crypto Alignment**: Added `is_24_7=True` support to `is_already_current()` to evaluate crypto daily closes at UTC midnight.

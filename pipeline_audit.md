@@ -465,3 +465,23 @@ versus networks all match the mechanism described in Finding 2.
 Both leakage/feature defects are closed. The "no data leakage" claim in the PSX docstring
 is now true rather than aspirational, and the crypto feature set once again honours the
 original project's explicit rule against absolute prices.
+
+## Recent Data Pipeline Hardening & Resiliency Enhancements
+
+Beyond the core audit fixes, the collection and runtime synchronization layers were hardened:
+
+1. **PSX Collection High Availability (TradingView Fallback)**:
+   - Added automatic TradingView websocket fallback (`PSX:<TICKER>`) to `scripts/collect_psx_stocks.py`.
+   - Resolves Cloudflare / DOSarrest WAF region blocks (`HTTP 462`) when collecting PSX daily prices from cloud infrastructure (e.g. Oracle Cloud VM).
+
+2. **Strict Complete-Candle Enforcement**:
+   - Updated `drop_unclosed_sessions()` and `is_already_current()` in `scripts/data_new_common.py` and `scripts/collect_psx_stocks.py`.
+   - Enforces `cutoff = today` (`df.index < today`) for traditional equity (PSX) and commodity markets during active trading days. Incomplete/forming intraday candles are strictly dropped so feature matrices only consume closed past trading sessions.
+
+3. **24/7 UTC Crypto Close Alignment**:
+   - Added `is_24_7: bool` flag to `is_already_current()` in `scripts/data_new_common.py`.
+   - For 24/7 crypto markets, `expected` evaluates strictly to `today - 1 day` UTC, ensuring Sunday's closed bar is recognized and collected during Monday daily updates.
+
+4. **Real Server Synchronization State**:
+   - Updated `auto_update` orchestration to store a real server-side `started_at` timestamp.
+   - Frontend `SyncGuard` queries server update status to display exact elapsed sync duration across client session reloads.

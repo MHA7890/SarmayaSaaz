@@ -115,7 +115,7 @@ trained. If a slide says PatchTST, remove it.
 |---|---|---|
 | Commodities | TradingView | Replays the chart websocket protocol (handshake → resolve_symbol → create_series) |
 | Crypto | Binance public spot API | `/api/v3/klines`, no auth |
-| PSX | PSX Data Portal (`dps.psx.com.pk`) | The exchange's own endpoint — not a third-party aggregator |
+| PSX | PSX Data Portal (`dps.psx.com.pk`) + TradingView fallback | Official exchange endpoint with automatic TradingView fallback (`PSX:<TICKER>`) if rate-limited |
 | MUFAP | `mufap.com.pk` | Fund directory → per-fund NAV history |
 
 **Why this matters:** using PSX's own data portal rather than Yahoo Finance means the
@@ -655,7 +655,15 @@ name in a `to_csv` round trip. Both are detected cheaply from the first two line
 startup — the empty ones excluded, the unnamed ones recovered positionally — rather than
 surfacing as a 503 on a user's first click.
 
-### 11.6 The governing principle
+### 11.6 Strict complete-candle enforcement & 24/7 market alignment
+
+Traditional stock (PSX) and commodity feeds strictly enforce completed past trading sessions (`< today`), automatically dropping unclosed intraday bars during market hours (`cutoff = today`). This prevents forming candles from polluting historical series or feature matrices. Crypto markets operate 24/7 and evaluate daily closes at UTC midnight (`today - 1 day` UTC), ensuring daily update collection reliably captures Sunday's closed bars on Mondays.
+
+### 11.7 Server-side synchronization state & Standby Guard
+
+Background auto-update orchestration tracks a real server-side timestamp (`started_at`). The frontend `SyncGuard` component queries `GET /api/system/update-status` and computes true server elapsed time, avoiding client-side timer resets across page reloads.
+
+### 11.8 The governing principle
 
 > **No synthetic values anywhere.** Where a metric was never recorded, the API returns
 > `null` and the UI renders "not measured" rather than a plausible-looking number.

@@ -50,12 +50,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-32x32.png?v=3", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png?v=3", sizes: "16x16", type: "image/png" },
-      { url: "/favicon.ico?v=3", sizes: "any" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
     ],
-    shortcut: "/favicon.ico?v=3",
-    apple: "/apple-icon.png?v=3",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
   },
 };
 
@@ -63,10 +63,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3" />
-        <link rel="shortcut icon" href="/favicon.ico?v=3" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=3" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
         {/* Applied before paint so the stored theme never flashes the wrong palette. */}
         <script
           dangerouslySetInnerHTML={{

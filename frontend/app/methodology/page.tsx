@@ -152,16 +152,18 @@ export default function MethodologyPage() {
             slightly different inputs.
           </li>
           <li>
-            <strong className="text-text">Price freshness.</strong> Commodities, crypto
-            and PSX stocks try a live quote first and fall back to the most recent stored
-            observation if that fails; mutual funds always use the latest NAV MUFAP has
-            published. Every asset displays its own &ldquo;as of&rdquo; date and whether
-            that figure is live or stored.
+            <strong className="text-text">Price freshness &amp; candle integrity.</strong>{" "}
+            Traditional equity (PSX) and commodity feeds strictly enforce completed past sessions
+            (&lt; today), dropping unclosed intraday bars during market hours to prevent forming candles
+            from polluting feature matrices. Crypto assets operate 24/7 and close daily bars at 00:00 UTC.
+            PSX collection includes automated TradingView fallback for high availability. Every asset displays
+            its exact &ldquo;as of&rdquo; date and relative time elapsed.
           </li>
           <li>
             <strong className="text-text">Withheld assets.</strong> Six crypto datasets end
             490–1,596 days behind the rest of the universe and are excluded rather than
-            forecast from stale or mislabeled history.
+            forecast from stale or mislabeled history. One mutual fund with missing commodity scaling data
+            is permanently excluded.
           </li>
           <li>
             <strong className="text-text">Point estimates.</strong> Bands are derived from

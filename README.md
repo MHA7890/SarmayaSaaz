@@ -100,9 +100,11 @@ Registered via `scripts/register_daily_task.ps1` as one Windows Task Scheduler
 job per market, each firing after that market closes — PSX 16:15 PKT, MUFAP
 19:45 PKT, commodities and crypto 06:00 PKT.
 
-Every step is idempotent: the collectors re-fetch the full 10-year window and
-rewrite each CSV, so a missed day self-heals on the next run with no incremental
-state to corrupt. Full details in `docs/automation.md`.
+Every step is idempotent: collectors re-fetch historical data and merge incrementally.
+Strict candle enforcement ensures that traditional equity/commodity markets only store
+and forecast from fully closed past trading sessions (`< today`), dropping forming candles
+during active market hours. Crypto markets run 24/7 and evaluate daily closes at UTC midnight.
+Full details in `docs/automation.md`.
 
 ---
 
@@ -112,7 +114,7 @@ state to corrupt. Full details in `docs/automation.md`.
 |---|---|---|---|
 | Commodities | TradingView chart websocket feed | None (anonymous) | ~10 years daily OHLCV |
 | Crypto | Binance spot klines REST API | None (public) | ~10 years daily OHLCV |
-| PSX Stocks | PSX Data Portal Services (dps.psx.com.pk) | None (public POST) | ~10 years daily OHLCV |
+| PSX Stocks | PSX Data Portal Services (`dps.psx.com.pk`) + TradingView fallback | None (public) | ~10 years daily OHLCV |
 | MUFAP Funds | mufap.com.pk FundDirectory + GetFundDetailbyAMCByDate | None (public) | ~10 years daily NAV |
 | News | TradingView headlines API + Google News RSS | None | Rolling window + archive |
 

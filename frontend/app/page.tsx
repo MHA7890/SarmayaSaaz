@@ -156,28 +156,28 @@ function MoverColumn({
             <li key={`${m.asset_class}:${m.ticker}`}>
               <Link
                 href={`/forecasts?ticker=${encodeURIComponent(m.ticker)}&class=${m.asset_class}`}
-                className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 hover:bg-surface-high/50"
+                className="flex items-center gap-3 px-5 py-3 hover:bg-surface-high/50"
               >
-                <span className="num w-4 sm:w-5 shrink-0 text-center text-xs text-dim">{i + 1}</span>
+                <span className="num w-5 shrink-0 text-center text-xs text-dim">{i + 1}</span>
 
-                <span className="w-[62px] sm:w-[78px] shrink-0 self-center">
-                  <span className="label block truncate rounded border border-line px-1 py-0.5 text-center text-[9px] sm:text-[10px] tracking-normal">
+                <span className="w-[78px] shrink-0 self-center">
+                  <span className="label block truncate rounded border border-line px-1 py-0.5 text-center text-[10px] tracking-normal">
                     {ASSET_CLASS_SHORT[m.asset_class]}
                   </span>
                 </span>
 
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs sm:text-[13px] font-semibold">{m.name}</span>
+                  <span className="block truncate text-[13px] font-semibold">{m.name}</span>
                   {/* "Commodity" as a group is just the class badge repeated -
                       every other class's group (sector/cluster) is real context. */}
                   {formatGroup(m.group).toLowerCase() !== "commodity" && (
-                    <span className="block truncate text-[10px] sm:text-[11px] text-dim">
+                    <span className="block truncate text-[11px] text-dim">
                       {formatGroup(m.group)}
                     </span>
                   )}
                 </span>
 
-                <span className="num hidden md:inline-block shrink-0 whitespace-nowrap text-right text-[12px]">
+                <span className="num shrink-0 whitespace-nowrap text-right text-[12px]">
                   <span className="text-dim">
                     {formatPrice(m.current_price, m.currency, m.asset_class)}
                   </span>
@@ -189,7 +189,7 @@ function MoverColumn({
 
                 <span
                   className={cn(
-                    "num shrink-0 whitespace-nowrap rounded-md border px-1.5 sm:px-2 py-0.5 sm:py-1 text-right text-[11px] sm:text-xs font-bold w-auto sm:w-[92px]",
+                    "num w-[92px] shrink-0 whitespace-nowrap rounded-md border px-2 py-1 text-right text-xs font-bold",
                     tone === "pos"
                       ? "border-pos/40 bg-pos/10 text-pos"
                       : "border-neg/40 bg-neg/10 text-neg",

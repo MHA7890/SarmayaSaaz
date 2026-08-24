@@ -117,8 +117,8 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center gap-2 sm:gap-3 px-3 sm:px-6">
-        <div className="flex shrink-0 items-center">
+      <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center gap-3 px-4 sm:px-6">
+        <div className="flex flex-1 items-center">
           {/* Two files rather than one plus a CSS filter: the wordmark's green
               and the arrow's gold both need lifting for the dark surface, and
               swapping via `dark:` keeps it flash-free on first paint. The
@@ -133,14 +133,14 @@ export function Navbar() {
               alt=""
               aria-hidden
               priority
-              className="h-7 sm:h-8 w-auto dark:hidden"
+              className="h-8 w-auto dark:hidden"
             />
             <Image
               src={logoDark}
               alt=""
               aria-hidden
               priority
-              className="hidden h-7 sm:h-8 w-auto dark:block"
+              className="hidden h-8 w-auto dark:block"
             />
           </Link>
         </div>
@@ -167,11 +167,11 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="flex flex-1 items-center justify-end gap-1.5 sm:gap-3">
-          <div ref={boxRef} className="relative w-full max-w-[150px] min-w-[100px] xs:max-w-[190px] sm:max-w-[240px] md:max-w-[280px]">
+        <div className="flex flex-1 items-center justify-end gap-3">
+          <div ref={boxRef} className="relative w-full max-w-[280px]">
             <Search
               size={14}
-              className="pointer-events-none absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-dim"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-dim"
             />
             <input
               ref={inputRef}
@@ -193,9 +193,9 @@ export function Navbar() {
                   if (hit) go(hit.ticker, hit.asset_class);
                 }
               }}
-              placeholder="Search assets…"
+              placeholder="Search BTC, gold, OGDC…"
               aria-label="Search assets"
-              className="focus-ring w-full rounded-lg border border-line bg-surface py-1.5 pl-7 sm:pl-8 pr-7 sm:pr-8 text-[12px] sm:text-[13px] placeholder:text-dim"
+              className="focus-ring w-full rounded-lg border border-line bg-surface py-1.5 pl-8 pr-8 text-[13px] placeholder:text-dim"
             />
             {query ? (
               <button
@@ -211,7 +211,7 @@ export function Navbar() {
             ) : (
               <kbd
                 aria-hidden="true"
-                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-block rounded border border-line bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium text-dim"
+                className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-line bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium text-dim"
               >
                 ⌘K
               </kbd>
@@ -220,7 +220,7 @@ export function Navbar() {
             {open && results.length > 0 && (
               <ul
                 role="listbox"
-                className="absolute left-0 right-0 sm:right-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-line bg-surface shadow-xl min-w-[240px]"
+                className="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-line bg-surface shadow-xl"
               >
                 {results.map((a, i) => (
                   <li
@@ -263,7 +263,7 @@ export function Navbar() {
             aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             className="focus-ring shrink-0 rounded-md border border-line p-1.5 text-muted hover:text-text lg:hidden"
           >
-            {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+            {mobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
           </button>
         </div>
       </div>
@@ -280,13 +280,13 @@ export function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "focus-ring flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-h-[44px]",
+                    "focus-ring flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     active
                       ? "bg-accent-soft text-accent font-semibold"
                       : "text-muted hover:bg-surface-high hover:text-text",
                   )}
                 >
-                  <Icon size={16} />
+                  <Icon size={15} />
                   {label}
                 </Link>
               );

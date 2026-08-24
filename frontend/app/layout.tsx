@@ -6,9 +6,48 @@ import { Navbar } from "@/components/nav/Navbar";
 import { TickerTape } from "@/components/nav/TickerTape";
 
 export const metadata: Metadata = {
-  title: "SarmayaSaaz: AI Financial Forecasting",
+  metadataBase: new URL("https://sarmayasaaz.tech"),
+  title: "SarmayaSaaz — AI-Powered Financial Forecasting",
   description:
-    "Multi horizon AI forecasts across cryptocurrencies, commodities, PSX equities and MUFAP mutual funds.",
+    "SarmayaSaaz is an AI-powered financial forecasting platform for cryptocurrencies, PSX stocks, commodities, and mutual funds.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "SarmayaSaaz — AI-Powered Financial Forecasting",
+    description:
+      "SarmayaSaaz is an AI-powered financial forecasting platform for cryptocurrencies, PSX stocks, commodities, and mutual funds.",
+    url: "https://sarmayasaaz.tech",
+    siteName: "SarmayaSaaz",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/icon.png",
+        width: 512,
+        height: 512,
+        alt: "SarmayaSaaz Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "SarmayaSaaz — AI-Powered Financial Forecasting",
+    description:
+      "SarmayaSaaz is an AI-powered financial forecasting platform for cryptocurrencies, PSX stocks, commodities, and mutual funds.",
+    images: ["/icon.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   icons: {
     icon: [
       { url: "/favicon-32x32.png?v=3", sizes: "32x32", type: "image/png" },

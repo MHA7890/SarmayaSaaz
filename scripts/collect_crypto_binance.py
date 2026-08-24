@@ -132,7 +132,7 @@ def run(tickers=None):
             out_path = OUT_DIR / f"{ticker}.csv"
             existing = read_existing_csv(out_path)
 
-            if is_already_current(existing, tz="UTC"):
+            if is_already_current(existing, tz="UTC", is_24_7=True):
                 logger.info(f"  -> {ticker}: already up to date ({existing.index.max().date()})")
                 ok.append(ticker)
                 continue

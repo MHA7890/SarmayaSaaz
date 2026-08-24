@@ -236,7 +236,7 @@ def run(target_names=None):
                 out_path_default = OUT_DIR / f"{safe_filename(name)}.csv"
                 if out_path_default.exists():
                     existing = read_existing_csv(out_path_default)
-                    if not existing.empty:
+                    if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
                         logger.info(f"  -> '{name}': series current ({existing.index.max().date()})")
                         ok.append(name)
                         continue
@@ -251,7 +251,7 @@ def run(target_names=None):
                 out_path = OUT_DIR / f"{safe_filename(label)}.csv"
                 existing = read_existing_csv(out_path)
 
-                if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE) or not existing.empty:
+                if is_already_current(existing, tz=MARKET_TZ, session_close=SESSION_CLOSE):
                     logger.info(f"  -> '{label}': series current ({existing.index.max().date()})")
                     ok.append(label)
                     continue

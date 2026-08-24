@@ -264,6 +264,7 @@ def is_already_current(
     *,
     tz: str = "Asia/Karachi",
     session_close: str | None = None,
+    is_24_7: bool = False,
 ) -> bool:
     """
     Check if existing DataFrame already has the latest expected closed trading session date.
@@ -273,22 +274,27 @@ def is_already_current(
         return False
 
     now = pd.Timestamp.now(tz=tz)
-    # Determine the most recent closed trading day date
-    if now.weekday() == 5:  # Saturday -> Friday
-        expected = (now - pd.Timedelta(days=1)).normalize().tz_localize(None)
-    elif now.weekday() == 6:  # Sunday -> Friday
-        expected = (now - pd.Timedelta(days=2)).normalize().tz_localize(None)
+    today = now.normalize().tz_localize(None)
+
+    if is_24_7:
+        # 24/7 market (Crypto) - yesterday's daily bar is always expected once UTC midnight passes
+        expected = today - pd.Timedelta(days=1)
     else:
-        today = now.normalize().tz_localize(None)
-        if session_close is not None:
-            hh, mm = (int(x) for x in session_close.split(":"))
-            closes_at = now.normalize() + pd.Timedelta(hours=hh, minutes=mm)
-            if now < closes_at:
-                expected = today - pd.Timedelta(days=3 if now.weekday() == 0 else 1)
-            else:
-                expected = today
+        weekday = now.weekday()
+        if weekday == 5:  # Saturday -> expected Friday close
+            expected = today - pd.Timedelta(days=1)
+        elif weekday == 6:  # Sunday -> expected Friday close
+            expected = today - pd.Timedelta(days=2)
         else:
-            expected = today - pd.Timedelta(days=3 if now.weekday() == 0 else 1)
+            if session_close is not None:
+                hh, mm = (int(x) for x in session_close.split(":"))
+                closes_at = now.normalize() + pd.Timedelta(hours=hh, minutes=mm)
+                if now < closes_at:
+                    expected = today - pd.Timedelta(days=3 if weekday == 0 else 1)
+                else:
+                    expected = today
+            else:
+                expected = today - pd.Timedelta(days=3 if weekday == 0 else 1)
 
     max_date = df.index.max().normalize()
     if max_date.tz is not None:

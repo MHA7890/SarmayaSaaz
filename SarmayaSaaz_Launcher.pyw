@@ -304,9 +304,11 @@ class SarmayaSaazLauncherApp:
 
     # --- Robust Python Resolver for Backend Execution ---
     def _get_backend_python_command(self) -> list[str] | None:
-        # 1. Look for existing .venv python in PROJECT_ROOT
+        # 1. Look for existing .venv python in PROJECT_ROOT with uvicorn installed
         venv_py = PROJECT_ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-        if venv_py.exists():
+        uvicorn_exe = PROJECT_ROOT / ".venv" / ("Scripts/uvicorn.exe" if os.name == "nt" else "bin/uvicorn")
+        uvicorn_pkg = PROJECT_ROOT / ".venv/Lib/site-packages/uvicorn"
+        if venv_py.exists() and (uvicorn_exe.exists() or uvicorn_pkg.exists()):
             return [str(venv_py), "-m", "uvicorn"]
 
         # 2. Look for uv executable in system PATH
@@ -330,13 +332,18 @@ class SarmayaSaazLauncherApp:
     def _check_dependencies_fast(self) -> tuple[bool, bool, list[str]]:
         missing = []
 
-        # 1. Fast Check Python .venv
+        # 1. Fast Check Python .venv & uvicorn
         venv_dir = PROJECT_ROOT / ".venv"
         python_bin = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
-        backend_ok = venv_dir.exists() and python_bin.exists()
+        uvicorn_exe = venv_dir / ("Scripts/uvicorn.exe" if os.name == "nt" else "bin/uvicorn")
+        uvicorn_pkg = venv_dir / "Lib/site-packages/uvicorn"
+        backend_ok = venv_dir.exists() and python_bin.exists() and (uvicorn_exe.exists() or uvicorn_pkg.exists())
 
         if not backend_ok:
-            missing.append("Python virtual environment (.venv) is missing.")
+            if not venv_dir.exists():
+                missing.append("Python virtual environment (.venv) is missing.")
+            else:
+                missing.append("Python dependencies (uvicorn, fastapi, etc.) are missing in .venv.")
 
         # 2. Fast Check Frontend node_modules
         node_modules = PROJECT_ROOT / "frontend" / "node_modules"
@@ -398,7 +405,7 @@ class SarmayaSaazLauncherApp:
                         sys_py = sys.executable
 
                     if sys_py:
-                        self.log("SYSTEM", f"Found system Python: {sys_py}. Creating virtual environment...")
+                        self.log("SYSTEM", f"Found system Python: {sys_py}. Creating/verifying virtual environment...")
                         venv_dir = PROJECT_ROOT / ".venv"
                         try:
                             p = subprocess.Popen(
@@ -410,6 +417,12 @@ class SarmayaSaazLauncherApp:
 
                             venv_py = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
                             if venv_py.exists():
+                                self.log("SYSTEM", "Upgrading pip and setuptools in .venv...")
+                                subprocess.run(
+                                    [str(venv_py), "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"],
+                                    capture_output=True
+                                )
+
                                 self.log("SYSTEM", "Installing Python dependencies into .venv via pip...")
                                 pip_cmd = [str(venv_py), "-m", "pip", "install", "-e", "."]
                                 p2 = subprocess.Popen(
@@ -420,8 +433,31 @@ class SarmayaSaazLauncherApp:
                                 if p2.stdout:
                                     for line in iter(p2.stdout.readline, ""):
                                         if line: self.log("BACKEND", line.strip())
-                                p2.wait()
-                                self.log("SYSTEM", "Python backend dependencies installed successfully via pip.")
+                                rc = p2.wait()
+
+                                if rc != 0:
+                                    self.log("SYSTEM", "⚠️ Editable package build failed. Falling back to direct dependency installation...")
+                                    fallback_pkgs = [
+                                        "fastapi", "uvicorn[standard]", "pydantic", "pydantic-settings",
+                                        "httpx", "python-dotenv", "scikit-learn==1.7.2", "numpy>=2.0,<2.4",
+                                        "pandas>=2.2,<3.0", "torch>=2.4,<3.0", "xgboost==3.4.0", "lightgbm",
+                                        "catboost", "joblib", "ta", "yfinance", "websocket-client", "openpyxl", "shap"
+                                    ]
+                                    p3 = subprocess.Popen(
+                                        [str(venv_py), "-m", "pip", "install"] + fallback_pkgs,
+                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        text=True, cwd=str(PROJECT_ROOT)
+                                    )
+                                    if p3.stdout:
+                                        for line in iter(p3.stdout.readline, ""):
+                                            if line: self.log("BACKEND", line.strip())
+                                    rc3 = p3.wait()
+                                    if rc3 == 0:
+                                        self.log("SYSTEM", "Python backend dependencies installed successfully via direct pip fallback.")
+                                    else:
+                                        self.log("ERROR", "Direct pip fallback failed. Check logs above.")
+                                else:
+                                    self.log("SYSTEM", "Python backend dependencies installed successfully via pip.")
                             else:
                                 self.log("ERROR", "Failed to locate python inside created .venv directory.")
                         except Exception as e:

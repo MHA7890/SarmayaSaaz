@@ -2,7 +2,7 @@
 name = "sarmayasaaz"
 version = "1.0.0"
 description = "Multi-asset AI forecasting engine for Pakistani and global markets"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12,<3.14"
 
 dependencies = [
     # --- Artifact-critical pins -------------------------------------------

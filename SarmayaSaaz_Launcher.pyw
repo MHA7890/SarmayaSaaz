@@ -282,9 +282,12 @@ class SarmayaSaazLauncherApp:
             return False
 
     def _update_status_badges(self, be_open: bool, fe_open: bool):
+        prev_be = self.backend_status.get()
         if be_open:
             self.backend_status.set("ONLINE")
             self.be_badge.configure(bg=ACCENT_GREEN)
+            if prev_be == "STARTING":
+                self.log("SYSTEM", "✅ Backend API is ONLINE and listening on port 8000!")
         elif self.backend_proc is not None and self.backend_proc.poll() is None:
             self.backend_status.set("STARTING")
             self.be_badge.configure(bg=ACCENT_YELLOW)
@@ -507,6 +510,7 @@ class SarmayaSaazLauncherApp:
             else:
                 cmd = cmd_prefix + ["backend.main:app", "--port", "8000"]
                 self.log("SYSTEM", f"Launching Backend API ({' '.join(cmd)})...")
+                self.log("SYSTEM", "⏳ Loading AI forecasting engines & model artifacts (~15-30s)... Please wait for status badge to turn ONLINE.")
                 try:
                     self.backend_proc = subprocess.Popen(
                         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -592,6 +596,13 @@ class SarmayaSaazLauncherApp:
     # --- Open Website ---
     def open_website(self):
         url = "http://localhost:3000"
+        be_stat = self.backend_status.get()
+        if be_stat == "STARTING":
+            self.log("SYSTEM", "⏳ Backend API is currently STARTING (loading ~2000 ML model artifacts)...")
+            self.log("SYSTEM", "Opening browser now - if pages display a connection error, refresh in a few seconds once Backend API turns ONLINE.")
+        elif be_stat == "STOPPED":
+            self.log("SYSTEM", "⚠️ Backend API is currently STOPPED. Click '▶ Start Platform' first.")
+
         self.log("SYSTEM", f"Opening web application in browser ({url})...")
         webbrowser.open(url)
 

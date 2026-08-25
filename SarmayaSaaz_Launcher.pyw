@@ -238,6 +238,14 @@ class SarmayaSaazLauncherApp:
         self.log("SYSTEM", " Click 'Start Platform' to launch backend and frontend.")
         self.log("SYSTEM", "==========================================================================")
 
+        # Check initial dependencies fast
+        backend_ok, frontend_ok, missing = self._check_dependencies_fast()
+        if not (backend_ok and frontend_ok):
+            self.log("SYSTEM", "⚠️ Prerequisites check: missing dependencies detected.")
+            for item in missing:
+                self.log("SYSTEM", f"   - {item}")
+            self.log("SYSTEM", "👉 Click '⚙ Install Dependencies' to set up required components.")
+
     # --- Logging Helpers ---
     def log(self, category: str, message: str):
         self.log_queue.put((category, message))
@@ -294,6 +302,30 @@ class SarmayaSaazLauncherApp:
             self.frontend_status.set("STOPPED")
             self.fe_badge.configure(bg=ACCENT_RED)
 
+    # --- Robust Python Resolver for Backend Execution ---
+    def _get_backend_python_command(self) -> list[str] | None:
+        # 1. Look for existing .venv python in PROJECT_ROOT
+        venv_py = PROJECT_ROOT / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        if venv_py.exists():
+            return [str(venv_py), "-m", "uvicorn"]
+
+        # 2. Look for uv executable in system PATH
+        uv_bin = shutil.which("uv")
+        if uv_bin:
+            return [uv_bin, "run", "uvicorn"]
+
+        # 3. Look for system python executables in system PATH
+        for py_name in ["python", "python3", "py"]:
+            py_path = shutil.which(py_name)
+            if py_path:
+                return [py_path, "-m", "uvicorn"]
+
+        # 4. Fallback to sys.executable ONLY if running as source script (not frozen .exe)
+        if not getattr(sys, "frozen", False):
+            return [sys.executable, "-m", "uvicorn"]
+
+        return None
+
     # --- Instant Dependency Pre-Check & Installer ---
     def _check_dependencies_fast(self) -> tuple[bool, bool, list[str]]:
         missing = []
@@ -339,9 +371,7 @@ class SarmayaSaazLauncherApp:
             # Check Python & uv if backend missing
             if not backend_ok:
                 uv_bin = shutil.which("uv")
-                if not uv_bin:
-                    self.log("ERROR", "uv tool not found in PATH! Please install uv (pip install uv).")
-                else:
+                if uv_bin:
                     self.log("SYSTEM", "Running 'uv sync --extra dev' for Python backend...")
                     try:
                         p = subprocess.Popen(
@@ -353,9 +383,51 @@ class SarmayaSaazLauncherApp:
                             for line in iter(p.stdout.readline, ""):
                                 if line: self.log("BACKEND", line.strip())
                         p.wait()
-                        self.log("SYSTEM", "Python backend dependencies installed successfully.")
+                        self.log("SYSTEM", "Python backend dependencies installed successfully via uv.")
                     except Exception as e:
                         self.log("ERROR", f"uv sync failed: {e}")
+                else:
+                    sys_py = None
+                    for py_name in ["python", "python3", "py"]:
+                        p_path = shutil.which(py_name)
+                        if p_path:
+                            sys_py = p_path
+                            break
+
+                    if not sys_py and not getattr(sys, "frozen", False):
+                        sys_py = sys.executable
+
+                    if sys_py:
+                        self.log("SYSTEM", f"Found system Python: {sys_py}. Creating virtual environment...")
+                        venv_dir = PROJECT_ROOT / ".venv"
+                        try:
+                            p = subprocess.Popen(
+                                [sys_py, "-m", "venv", str(venv_dir)],
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, cwd=str(PROJECT_ROOT)
+                            )
+                            p.wait()
+
+                            venv_py = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+                            if venv_py.exists():
+                                self.log("SYSTEM", "Installing Python dependencies into .venv via pip...")
+                                pip_cmd = [str(venv_py), "-m", "pip", "install", "-e", "."]
+                                p2 = subprocess.Popen(
+                                    pip_cmd,
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                    text=True, cwd=str(PROJECT_ROOT)
+                                )
+                                if p2.stdout:
+                                    for line in iter(p2.stdout.readline, ""):
+                                        if line: self.log("BACKEND", line.strip())
+                                p2.wait()
+                                self.log("SYSTEM", "Python backend dependencies installed successfully via pip.")
+                            else:
+                                self.log("ERROR", "Failed to locate python inside created .venv directory.")
+                        except Exception as e:
+                            self.log("ERROR", f"Virtualenv / pip installation failed: {e}")
+                    else:
+                        self.log("ERROR", "Python is not installed or not in PATH! Please install Python 3.12 (https://www.python.org).")
 
             # Check Node.js / npm if frontend missing
             if not frontend_ok:
@@ -389,30 +461,34 @@ class SarmayaSaazLauncherApp:
         if self.backend_proc and self.backend_proc.poll() is None:
             self.log("SYSTEM", "Backend process is already running.")
         else:
-            self.log("SYSTEM", "Launching Backend API (uvicorn backend.main:app)...")
-            uv_bin = shutil.which("uv")
-            if uv_bin:
-                cmd = [uv_bin, "run", "uvicorn", "backend.main:app", "--port", "8000"]
+            self.log("SYSTEM", "Resolving Python environment for Backend API...")
+            cmd_prefix = self._get_backend_python_command()
+            if not cmd_prefix:
+                self.log("ERROR", "Cannot start backend: Python virtual environment (.venv) or Python executable not found.")
+                self.log("ERROR", "Please click '⚙ Install Dependencies' to set up the environment, or install Python 3.12.")
+                self.backend_status.set("STOPPED")
+                self.be_badge.configure(bg=ACCENT_RED)
             else:
-                py_bin = sys.executable
-                cmd = [py_bin, "-m", "uvicorn", "backend.main:app", "--port", "8000"]
+                cmd = cmd_prefix + ["backend.main:app", "--port", "8000"]
+                self.log("SYSTEM", f"Launching Backend API ({' '.join(cmd)})...")
+                try:
+                    self.backend_proc = subprocess.Popen(
+                        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                        text=True, cwd=str(PROJECT_ROOT), bufsize=1
+                    )
+                    self.backend_status.set("STARTING")
+                    self.be_badge.configure(bg=ACCENT_YELLOW)
 
-            try:
-                self.backend_proc = subprocess.Popen(
-                    cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                    text=True, cwd=str(PROJECT_ROOT), bufsize=1
-                )
-                self.backend_status.set("STARTING")
-                self.be_badge.configure(bg=ACCENT_YELLOW)
+                    def _stream_backend_logs(proc: subprocess.Popen):
+                        if proc.stdout:
+                            for line in iter(proc.stdout.readline, ""):
+                                if line: self.log("BACKEND", line.strip())
 
-                def _stream_backend_logs(proc: subprocess.Popen):
-                    if proc.stdout:
-                        for line in iter(proc.stdout.readline, ""):
-                            if line: self.log("BACKEND", line.strip())
-
-                threading.Thread(target=_stream_backend_logs, args=(self.backend_proc,), daemon=True).start()
-            except Exception as e:
-                self.log("ERROR", f"Failed to start backend: {e}")
+                    threading.Thread(target=_stream_backend_logs, args=(self.backend_proc,), daemon=True).start()
+                except Exception as e:
+                    self.log("ERROR", f"Failed to start backend process: {e}")
+                    self.backend_status.set("STOPPED")
+                    self.be_badge.configure(bg=ACCENT_RED)
 
         # 2. Start Frontend Web App
         if self.frontend_proc and self.frontend_proc.poll() is None:
@@ -423,7 +499,10 @@ class SarmayaSaazLauncherApp:
             frontend_dir = PROJECT_ROOT / "frontend"
 
             if not npm_bin:
-                self.log("ERROR", "Cannot start frontend: npm is not installed or not in PATH.")
+                self.log("ERROR", "Cannot start frontend: npm is not installed or not found in system PATH.")
+                self.log("ERROR", "Please install Node.js (https://nodejs.org) to run the frontend.")
+                self.frontend_status.set("STOPPED")
+                self.fe_badge.configure(bg=ACCENT_RED)
                 return
 
             try:
@@ -441,7 +520,9 @@ class SarmayaSaazLauncherApp:
 
                 threading.Thread(target=_stream_frontend_logs, args=(self.frontend_proc,), daemon=True).start()
             except Exception as e:
-                self.log("ERROR", f"Failed to start frontend: {e}")
+                self.log("ERROR", f"Failed to start frontend process: {e}")
+                self.frontend_status.set("STOPPED")
+                self.fe_badge.configure(bg=ACCENT_RED)
 
     # --- Stop Services ---
     def stop_services(self):

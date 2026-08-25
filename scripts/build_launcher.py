@@ -19,7 +19,11 @@ def build():
         import PyInstaller
     except ImportError:
         print("Installing PyInstaller...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
+        uv_bin = shutil.which("uv")
+        if uv_bin:
+            subprocess.check_call([uv_bin, "pip", "install", "pyinstaller"])
+        else:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
     pyw_path = PROJECT_ROOT / "SarmayaSaaz_Launcher.pyw"
     if not pyw_path.exists():
@@ -28,6 +32,7 @@ def build():
 
     cmd = [
         sys.executable, "-m", "PyInstaller",
+        "--clean",
         "--noconsole",
         "--onefile",
         "--name", "SarmayaSaaz_Launcher",
